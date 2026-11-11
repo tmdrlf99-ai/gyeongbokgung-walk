@@ -63,7 +63,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:20px;margin:4px 0 0}
 .prompt kbd{font-family:inherit;background:var(--gold);color:#1c1606;border-radius:6px;padding:1px 7px;margin-left:6px}
 .ctrls{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .ctrls .row{display:flex;gap:8px}
-.cbtn{background:rgba(15,28,23,.82);border:1px solid rgba(232,200,122,.3);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.cbtn{touch-action:manipulation;-webkit-user-select:none;user-select:none;background:rgba(15,28,23,.82);border:1px solid rgba(232,200,122,.3);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer}
 .cbtn.on{background:var(--gold);color:#1c1606}
 .cbtn kbd{font-family:inherit;font-size:10px;border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-left:4px;opacity:.7}
 .act{width:68px;height:68px;border-radius:50%;background:var(--red);border:2px solid var(--gold);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
@@ -134,7 +134,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:20px;margin:4px 0 0}
     </div>
     <div class="vp" id="vp">
       <canvas id="gl" aria-label="경복궁 3D 산책 화면"></canvas>
-      <div class="where glass"><small>경복궁의 가을</small><b id="whereName">광화문 광장</b><span id="howto">↑↓ 걷기 · ←→ 방향 전환 · Space 점프</span></div>
+      <div class="where glass"><small>경복궁의 가을</small><b id="whereName">광화문 광장</b><span id="howto">방향키로 걷기 · 마우스 끌기로 시야 · Space 점프</span></div>
       <div class="prompt glass" id="prompt" hidden></div>
       <div class="toast" id="toast" hidden></div>
       <div class="joy" id="joy" hidden><i id="knob"></i></div>
@@ -1236,15 +1236,16 @@ canvas.addEventListener('pointermove', e => {
 const endP = e => { if (e.pointerId === joyId){ joyId = null; joy.hidden = true; mv.x = mv.y = 0; } if (e.pointerId === dragId) dragId = null; };
 canvas.addEventListener('pointerup', endP); canvas.addEventListener('pointercancel', endP);
 canvas.addEventListener('wheel', e => { e.preventDefault(); camDist = Math.max(3.5, Math.min(18, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); }, {passive:false});
-if (isTouch){ $('touchhint').hidden = false; $('runKey').hidden = true; document.querySelectorAll('.pckey').forEach(k => k.hidden = true); $('howto').textContent = '왼쪽 끌기로 걷기·방향 전환 · 오른쪽 끌기로 시야'; setTimeout(() => $('touchhint').hidden = true, 7000); }
+if (isTouch){ $('touchhint').hidden = false; $('runKey').hidden = true; document.querySelectorAll('.pckey').forEach(k => k.hidden = true); $('howto').textContent = '왼쪽 끌기로 걷기(끝까지 밀면 달리기) · 오른쪽 끌기로 시야'; setTimeout(() => $('touchhint').hidden = true, 7000); }
 
-$('runBtn').addEventListener('click', () => { running = !running; $('runBtn').classList.toggle('on', running); });
+const tap = (id, fn) => { const el = $(id); el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(); }); el.addEventListener('click', e => { if (e.detail === 0) fn(); }); };
+tap('runBtn', () => { running = !running; $('runBtn').classList.toggle('on', running); });
 $('actBtn').addEventListener('click', act);
 $('prompt').addEventListener('click', act);
 $('dialog').addEventListener('click', act);
-$('waveBtn').addEventListener('click', wave);
+tap('waveBtn', wave);
 function jump(){ if (player.air || dlg.open) return; player.vy = 8.2; player.air = true; pushPresence(true); }
-$('jumpBtn').addEventListener('click', jump);
+tap('jumpBtn', jump);
 function toggleView(){ firstPerson = !firstPerson; $('viewBtn').textContent = firstPerson ? '3인칭' : '1인칭'; me.g.visible = !firstPerson; }
 $('viewBtn').addEventListener('click', toggleView);
 let night = false;
@@ -1385,27 +1386,37 @@ const fwd = new THREE.Vector3(), tmpV = new THREE.Vector3();
 let last = performance.now(), regionName = '', frame = 0;
 
 function update(dt){
-  // movement input: up/down walk, left/right turn (camera follows)
-  let f = -mv.y, turn = -mv.x;
+  // movement input. 3rd person: camera stays put, the character walks in the pushed direction (no automatic view rotation).
+  // 1st person: left/right turn smoothly.
+  let f = -mv.y, side = mv.x;
   if (keys['w'] || keys['arrowup']) f += 1; if (keys['s'] || keys['arrowdown']) f -= 1;
-  if (keys['a'] || keys['arrowleft']) turn += 1; if (keys['d'] || keys['arrowright']) turn -= 1;
-  if (dlg.open || !$('book').hidden){ f = 0; turn = 0; }
-  f = Math.max(-1, Math.min(1, f)); turn = Math.max(-1, Math.min(1, turn));
-  turnVel += (turn * 1.55 - turnVel) * Math.min(1, dt * (turn ? 4.5 : 7)); if (Math.abs(turnVel) < 0.002) turnVel = 0;
-  yaw += turnVel * dt;
-  const run = running || keys['shift'];
-  const speed = (run ? 10 : 5.2) * Math.abs(f) * (f < 0 ? 0.6 : 1);
-  let moving = false;
+  if (keys['a'] || keys['arrowleft']) side -= 1; if (keys['d'] || keys['arrowright']) side += 1;
+  if (dlg.open || !$('book').hidden){ f = 0; side = 0; }
+  f = Math.max(-1, Math.min(1, f)); side = Math.max(-1, Math.min(1, side));
+  const joyMag = Math.hypot(mv.x, mv.y);
+  const run = running || keys['shift'] || (isTouch && joyMag > 0.93);
+  let moving = false, mdx = 0, mdz = 0, mag = 0;
+  if (firstPerson){
+    turnVel += (-side * 1.4 - turnVel) * Math.min(1, dt * (side ? 4 : 7)); if (Math.abs(turnVel) < 0.002) turnVel = 0;
+    yaw += turnVel * dt;
+    mag = Math.abs(f); if (mag > 0.08){ mdx = -Math.sin(yaw)*Math.sign(f); mdz = -Math.cos(yaw)*Math.sign(f); }
+  } else {
+    turnVel = 0;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+    mdx = fx*f + rx*side; mdz = fz*f + rz*side; mag = Math.min(1, Math.hypot(mdx, mdz));
+    if (mag > 0.08){ const L = Math.hypot(mdx, mdz); mdx /= L; mdz /= L; }
+  }
+  const speed = (run ? 10 : 5.2) * mag * (firstPerson && f < 0 ? 0.6 : 1);
   const curH = groundH(player.x, player.z), footY = Math.max(curH, player.y);
-  if (Math.abs(f) > 0.08){
-    const dx = -Math.sin(yaw)*Math.sign(f), dz = -Math.cos(yaw)*Math.sign(f);
-    const nx = player.x + dx*speed*dt, nz = player.z + dz*speed*dt;
+  if (mag > 0.08){
+    const nx = player.x + mdx*speed*dt, nz = player.z + mdz*speed*dt;
     const okX = !blocked(nx, player.z, 0.45) && groundH(nx, player.z) - footY < 1.05;
     const okZ = !blocked(player.x, nz, 0.45) && groundH(player.x, nz) - footY < 1.05;
     if (okX) player.x = nx; if (okZ) player.z = nz;
     moving = okX || okZ;
   }
-  { const target = yaw + Math.PI; let dh = target - player.heading; while (dh > Math.PI) dh -= Math.PI*2; while (dh < -Math.PI) dh += Math.PI*2; player.heading += dh * Math.min(1, dt*14); }
+  { const target = firstPerson ? yaw + Math.PI : (mag > 0.08 ? Math.atan2(mdx, mdz) : player.heading);
+    let dh = target - player.heading; while (dh > Math.PI) dh -= Math.PI*2; while (dh < -Math.PI) dh += Math.PI*2; player.heading += dh * Math.min(1, dt*10); }
   const gh = groundH(player.x, player.z);
   if (player.air){
     player.vy -= 24*dt; player.y += player.vy*dt;
@@ -1479,7 +1490,7 @@ if (/[?&](dbg|shot)/.test(location.search)) window.__g = {teleport, player, agen
 refreshStamps();
 $('loading').hidden = true;
 requestAnimationFrame(loop);
-setTimeout(() => { if (!stamps.size && !dlg.open) openDialog('수문장', ['어서 오시오! 경복궁 한 바퀴 산책에 온 걸 환영하오.', isTouch ? '화면 왼쪽을 위아래로 끌면 걷고 좌우로 끌면 방향이 바뀌오. 오른쪽을 끌면 둘러볼 수 있고, 점프 버튼도 있소. 금색 원에서 빨간 버튼을 누르면 해설과 도장이오.' : '↑↓ 방향키로 걷고 ←→로 방향을 바꾸시오. 스페이스바는 점프, Shift는 달리기, V는 1인칭 전환, F는 인사하기요.', '금색 원 앞에서 E를 누르면 해설이 나오고 도장이 찍히오. 궁녀나 관람객 곁에서 누르면 말을 걸 수 있고, 전각 문으로 들어가면 안도 둘러볼 수 있소. 열두 곳을 모두 모아 보시오!']); }, 500);
+setTimeout(() => { if (!stamps.size && !dlg.open) openDialog('수문장', ['어서 오시오! 경복궁 한 바퀴 산책에 온 걸 환영하오.', isTouch ? '화면 왼쪽을 끌면 그 방향으로 걷고, 끝까지 밀면 달리오. 시야는 저절로 돌지 않으니 화면 오른쪽을 끌어 둘러보시오. 점프 버튼도 있소.' : '방향키나 WASD로 누른 쪽으로 걷소. 시야는 저절로 돌지 않으니 마우스로 끌어 둘러보시오. 스페이스바는 점프, Shift는 달리기, V는 1인칭 전환, F는 인사하기요.', '금색 원 앞에서 E를 누르면 해설이 나오고 도장이 찍히오. 궁녀나 관람객 곁에서 누르면 말을 걸 수 있고, 전각 문으로 들어가면 안도 둘러볼 수 있소. 열두 곳을 모두 모아 보시오!']); }, 500);
 })();
 </script>
 
