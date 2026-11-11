@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1c17">
+<meta name="description" content="곤룡포 입은 임금이 되어 3D 경복궁을 걷고, 12곳 해설을 들으며 도장을 모으는 산책">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="경복궁 한바퀴">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}</style>
+<title>경복궁 한바퀴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: palace-night green shell — 3D viewport card on the left, walk-map card on the right; stacks on phones. Deliberate single dark look. */
+:root{
+  --bg:#0f1c17; --bg2:#14261f; --card:#172a22; --line:#2b4237; --fg:#eef2e8; --muted:#a3b3a6;
+  --gold:#e8c87a; --red:#c2412d; --jade:#4fae8f; --sky:#7fb6d9;
+  --f-display:"Nanum Myeongjo","Batang",serif;
+  --f-body:"Gowun Dodum","Noto Sans KR",system-ui,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 24px;
+  background:radial-gradient(1200px 600px at 20% -10%,#1d3a2e 0%,transparent 60%),var(--bg)}
+button{font-family:inherit;color:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.top{max-width:1360px;margin:0 auto 12px;display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);display:grid;place-items:center;background:var(--card);color:var(--gold);font-size:20px}
+.top b{font-family:var(--f-display);font-size:18px;display:block}
+.top small{font-size:10px;letter-spacing:.2em;color:var(--muted)}
+.layout{max-width:1360px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:18px;overflow:hidden;min-width:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;padding:16px 18px 12px}
+.eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);font-weight:700}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.5vw,40px);margin:4px 0 0;letter-spacing:-.01em}
+h2{font-family:var(--f-display);font-weight:800;font-size:20px;margin:4px 0 0}
+.tg{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.btn:hover{border-color:var(--gold)}
+.btn.gold{background:var(--gold);color:#1c1606;border-color:var(--gold)}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.on{background:var(--jade);box-shadow:0 0 0 3px rgba(79,174,143,.2)}
+
+.vp{position:relative;height:min(74vh,720px);min-height:420px;background:#9cc0d6;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+@media (max-width:980px){.vp{height:min(70vh,640px);min-height:380px}}
+.vp canvas{display:block;width:100%;height:100%;cursor:grab}
+.vp canvas:active{cursor:grabbing}
+.glass{background:rgba(15,28,23,.78);border:1px solid rgba(232,200,122,.25);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.where{position:absolute;top:12px;left:12px;padding:10px 14px;max-width:min(300px,calc(100% - 24px))}
+.where small{font-size:11px;color:var(--muted)}
+.where b{display:block;font-family:var(--f-display);font-size:20px;margin:2px 0}
+.where span{font-size:11px;color:var(--muted)}
+.prompt{position:absolute;left:50%;top:58%;transform:translateX(-50%);padding:8px 14px;font-size:14px;font-weight:700;white-space:nowrap;cursor:pointer}
+.prompt kbd{font-family:inherit;background:var(--gold);color:#1c1606;border-radius:6px;padding:1px 7px;margin-left:6px}
+.ctrls{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.ctrls .row{display:flex;gap:8px}
+.cbtn{background:rgba(15,28,23,.82);border:1px solid rgba(232,200,122,.3);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.cbtn.on{background:var(--gold);color:#1c1606}
+.cbtn kbd{font-family:inherit;font-size:10px;border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-left:4px;opacity:.7}
+.act{width:68px;height:68px;border-radius:50%;background:var(--red);border:2px solid var(--gold);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.act.dim{background:rgba(15,28,23,.82)}
+.joy{position:absolute;width:118px;height:118px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(15,28,23,.3);transform:translate(-50%,-50%);pointer-events:none}
+.joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;border-radius:50%;background:rgba(238,242,232,.9);transform:translate(-50%,-50%)}
+.touchhint{position:absolute;left:12px;bottom:12px;font-size:11px;color:#fff;background:rgba(15,28,23,.6);padding:6px 10px;border-radius:10px}
+.dialog{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:min(620px,calc(100% - 24px));padding:20px 20px 14px;cursor:pointer}
+.dialog .tag{position:absolute;top:-14px;left:18px;background:var(--gold);color:#1c1606;font-family:var(--f-display);font-weight:800;padding:3px 14px;border-radius:999px;font-size:15px}
+.dialog p{margin:0;font-size:15px;line-height:1.75;min-height:3.5em}
+.dialog .nx{position:absolute;right:16px;bottom:8px;font-size:12px;color:var(--gold)}
+.toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--red);border:1px solid var(--gold);color:#fff;font-family:var(--f-display);font-weight:800;padding:8px 18px;border-radius:999px;white-space:nowrap}
+.loading{position:absolute;inset:0;display:grid;place-items:center;background:#0f1c17;font-family:var(--f-display);font-size:20px;color:var(--gold);text-align:center;padding:20px}
+.cardfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;font-size:13px;color:var(--muted)}
+.stampline{display:flex;gap:4px;flex-wrap:wrap}
+.stampline i{width:14px;height:14px;border-radius:4px;border:1px dashed var(--line)}
+.stampline i.on{background:var(--red);border:1px solid var(--gold)}
+
+.mapcard .cardhead{align-items:center}
+.mapwrap{padding:0 14px}
+#mini{display:block;width:100%;height:auto;aspect-ratio:340/470;border-radius:12px;background:#203a2f;border:1px solid var(--line);cursor:pointer}
+.here{display:inline-flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:12px 14px 0}
+.here small{font-size:10px;color:var(--muted)}
+.here b{font-size:14px}
+.sec{padding:12px 14px 0;display:flex;flex-direction:column;gap:8px}
+.sec label{font-size:12px;color:var(--muted)}
+.sec input{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--fg);font:inherit;font-size:14px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 14px}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer}
+.chip.got{border-color:var(--red);color:#ffd2c8}
+.chip:hover{border-color:var(--gold)}
+.people{display:flex;flex-direction:column;gap:4px;padding:0 14px}
+.people div{display:flex;align-items:center;gap:8px;font-size:13px}
+.people i{width:10px;height:10px;border-radius:50%}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);padding:10px 14px 0;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.note{font-size:11px;color:var(--muted);padding:0 14px 14px;line-height:1.6;margin:0}
+
+.sheet{position:fixed;inset:0;background:rgba(5,10,8,.7);display:grid;place-items:center;padding:16px;z-index:20}
+.sheetcard{background:var(--card);border:1px solid var(--line);border-radius:18px;width:min(560px,100%);max-height:90vh;overflow:auto;padding:18px;position:relative}
+.close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;font-size:18px;cursor:pointer}
+.stamps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+@media (max-width:440px){.stamps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.seal{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:center}
+.seal span{width:62px;height:62px;border-radius:12px;border:2px dashed var(--line);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:13px;color:var(--muted);padding:4px;line-height:1.15}
+.seal.on span{border:3px solid var(--red);color:#ff9b88;transform:rotate(-6deg);background:rgba(194,65,45,.12)}
+@media (max-width:640px){.dialog{left:10px;transform:none;width:calc(100% - 100px);bottom:10px;padding:18px 14px 12px}.dialog p{font-size:14px}#mini{max-width:420px;margin:0 auto}}
+.vp.talking #waveBtn,.vp.talking #runBtn{visibility:hidden}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="logo" aria-hidden="true">✦</div>
+  <div><b>경복궁 한바퀴</b><small>GYEONGBOKGUNG WALK</small></div>
+</header>
+
+<main class="layout">
+  <section class="card">
+    <div class="cardhead">
+      <div><div class="eyebrow">SEOUL · SEJONG-RO 161</div><h1>경복궁 가을 산책</h1></div>
+      <div class="tg">
+        <button class="btn" id="viewBtn" type="button">1인칭</button>
+        <button class="btn" id="dayBtn" type="button">☾ 밤</button>
+        <span class="pill"><i class="dot on"></i>3D 산책</span>
+      </div>
+    </div>
+    <div class="vp" id="vp">
+      <canvas id="gl" aria-label="경복궁 3D 산책 화면"></canvas>
+      <div class="where glass"><small>경복궁의 가을</small><b id="whereName">광화문 광장</b><span id="howto">↑↓ 걷기 · ←→ 방향 전환 · Space 점프</span></div>
+      <div class="prompt glass" id="prompt" hidden></div>
+      <div class="toast" id="toast" hidden></div>
+      <div class="joy" id="joy" hidden><i id="knob"></i></div>
+      <div class="touchhint" id="touchhint" hidden>왼쪽 끌기: 이동 · 오른쪽 끌기: 시야</div>
+      <div class="ctrls">
+        <div class="row">
+          <button class="cbtn" id="waveBtn" type="button">인사하기</button>
+          <button class="cbtn" id="jumpBtn" type="button">점프<kbd class="pckey">Space</kbd></button>
+        </div>
+        <div class="row">
+          <button class="cbtn" id="runBtn" type="button">달리기<kbd id="runKey">Shift</kbd></button>
+          <button class="act dim" id="actBtn" type="button">살펴<br>보기</button>
+        </div>
+      </div>
+      <div class="dialog glass" id="dialog" hidden><div class="tag" id="dlgName"></div><p id="dlgText"></p><div class="nx" id="dlgNext">다음 ▶</div></div>
+      <div class="loading" id="loading">경복궁 문을 여는 중…</div>
+    </div>
+    <div class="cardfoot">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span>도장 <b id="stampCount" style="color:var(--gold)">0</b>/12</span><div class="stampline" id="stampline"></div></div>
+      <button class="btn gold" id="bookBtn" type="button">도장첩 보기</button>
+    </div>
+  </section>
+
+  <aside class="card mapcard">
+    <div class="cardhead">
+      <div><div class="eyebrow">WALK MAP</div><h2>산책 지도</h2></div>
+      <span class="pill"><i class="dot" id="liveDot"></i><span id="liveCount">혼자 산책 중</span></span>
+    </div>
+    <div class="mapwrap"><canvas id="mini" width="680" height="940" aria-label="경복궁 미니맵. 누르면 그 위치로 이동"></canvas></div>
+    <div class="here"><small>현재 위치</small><b id="hereName">광화문 광장</b></div>
+    <div class="legend"><span><i class="dot" style="background:var(--gold)"></i>나</span><span><i class="dot" style="background:var(--sky)"></i>동행</span><span><i class="dot" style="background:#f1d277"></i>안 가 본 곳</span><span><i class="dot" style="background:var(--red)"></i>도장 찍은 곳</span></div>
+    <div class="sec">
+      <label for="nick">함께 걷는 사람에게 보일 이름</label>
+      <input id="nick" maxlength="12" placeholder="예: 기획팀 진대리" autocomplete="nickname">
+    </div>
+    <div class="sec"><label>함께 걷는 중</label></div>
+    <div class="people" id="people"><div style="color:var(--muted)">지금은 혼자예요. 같은 주소로 들어온 사람이 함께 보여요.</div></div>
+    <div class="sec"><label>바로 가기</label></div>
+    <div class="chips" id="chips"></div>
+    <p class="note">홈 화면에 추가하면 앱처럼 쓸 수 있어요. 건물 배치는 실제 경복궁을 약 70% 크기로 줄여 단순화한 것입니다. 해설은 공개된 역사 정보를 짧게 정리한 것이에요.</p>
+  </aside>
+</main>
+
+<div class="sheet" id="book" hidden>
+  <div class="sheetcard">
+    <button class="close" type="button" id="bookClose" aria-label="닫기">×</button>
+    <h2>도장첩</h2>
+    <p style="margin:6px 0 0;color:var(--muted);font-size:13px">건물 앞 금색 표시에서 해설을 들으면 도장이 찍혀요.</p>
+    <div class="stamps" id="stamps"></div>
+    <p id="doneMsg" hidden style="margin:14px 0 0;background:var(--red);border-radius:12px;padding:10px 12px;font-size:14px">열두 곳을 모두 돌았어요. 경복궁 한 바퀴 완주!</p>
+  </div>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+if (!window.THREE){ $('loading').textContent = '3D 엔진을 불러오지 못했어요. 새로고침해 주세요.'; return; }
+const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= renderer ================= */
+const vp = $('vp'), canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias: !isTouch, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 1400);
+const DAY = {sky:0xa9cce0, fog:0xc4d8e2, hemiSky:0xdfeeff, hemiGround:0x8a7a55, hemi:0.62, sun:0.72, sunColor:0xfff1d6};
+const NIGHT = {sky:0x0d1630, fog:0x101a33, hemiSky:0x3a4f80, hemiGround:0x1a1a22, hemi:0.42, sun:0.35, sunColor:0x9fb6ff};
+scene.background = new THREE.Color(DAY.sky);
+scene.fog = new THREE.Fog(DAY.fog, 90, 520);
+const hemi = new THREE.HemisphereLight(DAY.hemiSky, DAY.hemiGround, DAY.hemi); scene.add(hemi);
+const sun = new THREE.DirectionalLight(DAY.sunColor, DAY.sun); sun.position.set(-160, 260, 120); scene.add(sun);
+
+/* ================= textures ================= */
+function ctex(w, h, draw, rx=1, ry=1){
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 4; return t;
+}
+let seed = 1395; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+const T = {};
+T.gravel = ctex(256,256,(g,w,h)=>{ g.fillStyle='#d6c7a3'; g.fillRect(0,0,w,h); for(let i=0;i<4200;i++){ g.fillStyle = rnd()<.5?'rgba(150,128,90,.28)':'rgba(255,250,232,.32)'; g.fillRect(rnd()*w,rnd()*h,2,2);} });
+T.paving = ctex(256,256,(g,w,h)=>{ g.fillStyle='#b9b1a1'; g.fillRect(0,0,w,h);
+  for(let y=0;y<h;y+=32){ const off=(y/32)%2*32; for(let x=-32;x<w;x+=64){ const v=165+rnd()*35|0; g.fillStyle=`rgb(${v},${v-5},${v-16})`; g.fillRect(x+off+2,y+2,60,28);} } });
+T.bakseok = ctex(256,256,(g,w,h)=>{ g.fillStyle='#a49c8c'; g.fillRect(0,0,w,h);
+  for(let i=0;i<70;i++){ const x=rnd()*w,y=rnd()*h,s=30+rnd()*40,v=160+rnd()*40|0; g.fillStyle=`rgb(${v},${v-6},${v-18})`; g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y+rnd()*8); g.lineTo(x+s-rnd()*8,y+s*.7); g.lineTo(x+rnd()*6,y+s*.75); g.fill(); } });
+T.grass = ctex(256,256,(g,w,h)=>{ g.fillStyle='#a9a25e'; g.fillRect(0,0,w,h); for(let i=0;i<5000;i++){ g.fillStyle = rnd()<.5?'rgba(120,112,40,.4)':'rgba(214,196,110,.35)'; g.fillRect(rnd()*w,rnd()*h,1,3);} });
+T.wall = ctex(256,128,(g,w,h)=>{ g.fillStyle='#b9805b'; g.fillRect(0,0,w,h);
+  for(let x=0;x<w;x+=32){ g.fillStyle='rgba(222,170,120,.55)'; g.fillRect(x+6,h*.12,20,h*.36); }
+  g.fillStyle='#a99f8c'; g.fillRect(0,h*.55,w,h*.45);
+  for(let y=h*.55;y<h;y+=14){ const off=((y/14)|0)%2*20; for(let x=-20;x<w;x+=40){ const v=150+rnd()*40|0; g.fillStyle=`rgb(${v},${v-6},${v-16})`; g.fillRect(x+off+1,y+1,38,12);} } });
+T.roof = ctex(64,64,(g,w,h)=>{ g.fillStyle='#4d535b'; g.fillRect(0,0,w,h); for(let x=0;x<w;x+=8){ g.fillStyle='#2f343b'; g.fillRect(x,0,3,h); g.fillStyle='#6a7079'; g.fillRect(x+4,0,2,h);} g.fillStyle='rgba(20,22,26,.35)'; for(let y=0;y<h;y+=16) g.fillRect(0,y,w,2); });
+T.body = ctex(256,128,(g,w,h)=>{ g.fillStyle='#e9dbbd'; g.fillRect(0,0,w,h);
+  g.fillStyle='#2f7d6d'; g.fillRect(0,0,w,18); g.fillStyle='#c2412d'; for(let x=4;x<w;x+=16) g.fillRect(x,5,8,8); g.fillStyle='#e3b23c'; for(let x=10;x<w;x+=16) g.fillRect(x,7,3,4);
+  for(let x=0;x<w;x+=64){ g.fillStyle='#6b3b2a'; g.fillRect(x+8,26,48,h-34);
+    g.strokeStyle='rgba(233,219,189,.75)'; g.lineWidth=1.5; for(let k=x+14;k<x+56;k+=7){ g.beginPath(); g.moveTo(k,30); g.lineTo(k,h-12); g.stroke(); } for(let k=34;k<h-12;k+=8){ g.beginPath(); g.moveTo(x+10,k); g.lineTo(x+54,k); g.stroke(); } } });
+T.plain = ctex(256,128,(g,w,h)=>{ g.fillStyle='#e4d8bf'; g.fillRect(0,0,w,h); g.fillStyle='#7a6449'; g.fillRect(0,0,w,10);
+  for(let x=0;x<w;x+=64){ g.fillStyle='#8b7353'; g.fillRect(x+8,22,48,h-30); g.strokeStyle='rgba(240,232,214,.8)'; for(let k=x+14;k<x+56;k+=7){ g.beginPath(); g.moveTo(k,26); g.lineTo(k,h-12); g.stroke(); } for(let k=30;k<h-12;k+=8){ g.beginPath(); g.moveTo(x+10,k); g.lineTo(x+54,k); g.stroke(); } } });
+T.stone = ctex(256,256,(g,w,h)=>{ g.fillStyle='#bdb5a4'; g.fillRect(0,0,w,h); for(let y=0;y<h;y+=24){ const off=((y/24)|0)%2*28; for(let x=-28;x<w;x+=56){ const v=170+rnd()*40|0; g.fillStyle=`rgb(${v},${v-5},${v-15})`; g.fillRect(x+off+1,y+1,54,22);} } });
+T.brick = ctex(64,128,(g,w,h)=>{ g.fillStyle='#a5503b'; g.fillRect(0,0,w,h); g.fillStyle='rgba(255,210,180,.25)'; for(let y=0;y<h;y+=8) g.fillRect(0,y,w,1); g.fillStyle='#e6d6b5'; g.fillRect(14,48,36,30); g.fillStyle='#a5503b'; g.font='bold 22px serif'; g.fillText('壽',20,72); });
+T.water = ctex(128,128,(g,w,h)=>{ g.fillStyle='#4f8fa5'; g.fillRect(0,0,w,h); for(let i=0;i<70;i++){ g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=1.5; const x=rnd()*w,y=rnd()*h; g.beginPath(); g.moveTo(x,y); g.lineTo(x+8+rnd()*10,y); g.stroke(); } });
+
+const M = {}; const lam = (o) => new THREE.MeshLambertMaterial(o);
+M.red = lam({color:0xa3322a}); M.stone = lam({map:T.stone}); M.stoneDark = lam({color:0x9a917f}); M.ridge = lam({color:0xe7e1d4});
+M.dark = lam({color:0x2a2e34}); M.gold = lam({color:0xe3b23c}); M.wood = lam({color:0x8a5a3a}); M.green = lam({color:0x2f7d6d});
+M.door = lam({color:0x8f2d22}); M.lantern = lam({color:0xf6d79a, emissive:0x000000});
+M.roofs = []; M.bodies = [];
+function roofMat(len){ const t = T.roof.clone(); t.needsUpdate = true; t.repeat.set(1,1); const m = lam({map:t, side:THREE.DoubleSide}); M.roofs.push(m); return m; }
+const roofMatShared = lam({map:T.roof, side:THREE.DoubleSide});
+function bodyMat(w, plain){ const t = (plain?T.plain:T.body).clone(); t.needsUpdate = true; t.repeat.set(Math.max(1,Math.round(w/4.5)),1); const m = lam({map:t}); M.bodies.push(m); return m; }
+function texMat(tex, rx, ry){ const t = tex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return lam({map:t}); }
+
+/* ================= collision & height ================= */
+const solids = [];   // {x0,z0,x1,z1}
+const discs = [];    // {x,z,r}
+const waters = [];   // {x0,z0,x1,z1} | {x,z,r,circle}
+const walks = [];    // walkable bridges {x0,z0,x1,z1}
+const heights = [];  // {x0,z0,x1,z1,h, ramp:{axis:'x'|'z', a, b, h0, h1}}
+const mapShapes = []; // for minimap {type,x0,z0,x1,z1,color} / circle
+const BOUND = {x0:-205, x1:205, z0:-335, z1:310};
+function solid(x0,z0,x1,z1, map){ solids.push({x0:Math.min(x0,x1),z0:Math.min(z0,z1),x1:Math.max(x0,x1),z1:Math.max(z0,z1)}); if (map) mapShapes.push({type:'rect',x0,z0,x1,z1,color:map}); }
+function inR(x,z,r){ return x>=r.x0 && x<=r.x1 && z>=r.z0 && z<=r.z1; }
+function groundH(x,z){
+  let h = 0;
+  for (const q of heights){ if (!inR(x,z,q)) continue;
+    let v = q.h;
+    if (q.ramp){ const p = q.ramp.axis==='x' ? x : z; const t = Math.max(0, Math.min(1, (p - q.ramp.a)/(q.ramp.b - q.ramp.a))); v = q.ramp.h0 + (q.ramp.h1 - q.ramp.h0)*t; }
+    if (v > h) h = v; }
+  return h;
+}
+function blocked(x,z,r){
+  if (x < BOUND.x0 || x > BOUND.x1 || z < BOUND.z0 || z > BOUND.z1) return true;
+  for (const s of solids){ const cx = Math.max(s.x0, Math.min(x, s.x1)), cz = Math.max(s.z0, Math.min(z, s.z1)); if ((x-cx)**2 + (z-cz)**2 < r*r) return true; }
+  for (const d of discs){ if ((x-d.x)**2 + (z-d.z)**2 < (d.r + r)**2) return true; }
+  const onWalk = walks.some(w => inR(x,z,w));
+  if (!onWalk) for (const w of waters){
+    if (w.circle){ if ((x-w.x)**2 + (z-w.z)**2 < (w.r + r*0.5)**2 && !(w.island && (x-w.x)**2 + (z-w.z)**2 < (w.island - r)**2)) return true; }
+    else if (x > w.x0 - r*0.5 && x < w.x1 + r*0.5 && z > w.z0 - r*0.5 && z < w.z1 + r*0.5 && !(w.island && inR(x,z,w.island))) return true;
+  }
+  return false;
+}
+
+/* ================= geometry helpers ================= */
+const add = (geo, mat, x=0, y=0, z=0, ry=0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.rotation.y = ry; scene.add(m); return m; };
+const box = (w,h,d,mat,x,y,z,ry=0) => add(new THREE.BoxGeometry(w,h,d), mat, x, y + h/2, z, ry);
+function plane(w, d, mat, x, y, z){ const m = add(new THREE.PlaneGeometry(w, d), mat, x, y, z); m.rotation.x = -Math.PI/2; return m; }
+
+// curved hip roof: w (x), d (z), h rise, lift (corner up-turn), ridgeK 0..1
+function roofGeo(w, d, h, lift, ridgeK){
+  const pos = [], uv = [], N = 14, hw = w/2, hd = d/2, rl = Math.max(0.3, hw - hd*ridgeK);
+  const ey = t => lift * Math.pow(Math.abs(2*t - 1), 2.4);
+  const tri = (a,b,c, ua,ub,uc) => { pos.push(...a,...b,...c); uv.push(...ua,...ub,...uc); };
+  for (const sgn of [1,-1]){ // front/back
+    for (let i=0;i<N;i++){
+      const t0 = i/N, t1 = (i+1)/N;
+      const b0 = [-hw + w*t0, ey(t0), sgn*hd], b1 = [-hw + w*t1, ey(t1), sgn*hd];
+      const p0 = [-rl + 2*rl*t0, h, 0], p1 = [-rl + 2*rl*t1, h, 0];
+      const u0 = t0*w/1.6, u1 = t1*w/1.6;
+      tri(b0,b1,p1,[u0,0],[u1,0],[u1,1]); tri(b0,p1,p0,[u0,0],[u1,1],[u0,1]);
+    }
+  }
+  for (const sgn of [1,-1]){ // hips
+    const top = [sgn*rl, h, 0];
+    for (let i=0;i<N;i++){
+      const t0 = i/N, t1 = (i+1)/N;
+      const b0 = [sgn*hw, ey(t0), -hd + d*t0], b1 = [sgn*hw, ey(t1), -hd + d*t1];
+      tri(b0,b1,top,[t0*d/1.6,0],[t1*d/1.6,0],[d/3.2,1]);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals(); return g;
+}
+function roof(x, y, z, w, d, h, opt={}){
+  const ry = opt.ry || 0;
+  const grp = new THREE.Group(); grp.position.set(x,y,z); grp.rotation.y = ry; scene.add(grp);
+  const m = new THREE.Mesh(roofGeo(w, d, h, opt.lift ?? Math.min(1.2, w*0.03 + 0.3), opt.ridgeK ?? 0.75), roofMatShared); grp.add(m);
+  const rl = Math.max(0.3, w/2 - d/2*(opt.ridgeK ?? 0.75));
+  if (!opt.noRidge){
+    const r = new THREE.Mesh(new THREE.BoxGeometry(rl*2 + 0.5, Math.max(0.35, h*0.12), Math.max(0.45, d*0.035)), M.ridge); r.position.set(0, h, 0); grp.add(r);
+    for (const s of [-1,1]){ const e = new THREE.Mesh(new THREE.BoxGeometry(0.5, Math.max(0.7,h*0.2), 0.5), M.dark); e.position.set(s*(rl+0.2), h+0.2, 0); grp.add(e); }
+  }
+  // eave band (dancheong)
+  if (!opt.noBand){ const b = new THREE.Mesh(new THREE.BoxGeometry(w - 1.2, 0.5, d - 1.2), opt.plain ? M.wood : M.green); b.position.set(0, -0.15, 0); grp.add(b); }
+  return grp;
+}
+// signboard (현판)
+function sign(text, x, y, z, w, ry=0){
+  const c = document.createElement('canvas'); c.width = 256; c.height = 96; const g = c.getContext('2d');
+  g.fillStyle = '#1c2533'; g.fillRect(0,0,256,96); g.strokeStyle = '#2f7d6d'; g.lineWidth = 10; g.strokeRect(5,5,246,86);
+  g.strokeStyle = '#e3b23c'; g.lineWidth = 2; g.strokeRect(14,14,228,68);
+  g.fillStyle = '#e8c87a'; g.font = 'bold 50px "Nanum Myeongjo","Batang","Noto Serif CJK KR",serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 52);
+  const t = new THREE.CanvasTexture(c);
+  const m = add(new THREE.PlaneGeometry(w, w*0.375), lam({map:t}), x, y, z, ry); return m;
+}
+// instanced columns
+const COLS = {red:[], stoneSq:[], stoneRd:[], stoneSqT:[], trunk:[]};
+function col(kind, x, y0, h, z, r=0.3){ COLS[kind].push({x, y:y0 + h/2, z, h, r}); }
+function flushColumns(){
+  const geo = {red:new THREE.CylinderGeometry(1,1.05,1,8), stoneSq:new THREE.CylinderGeometry(1,1,1,4), stoneRd:new THREE.CylinderGeometry(1,1,1,10)};
+  const mat = {red:M.red, stoneSq:M.stoneDark, stoneRd:M.stoneDark};
+  const tmp = new THREE.Object3D();
+  for (const k of ['red','stoneSq','stoneRd']){
+    const L = COLS[k]; if (!L.length) continue;
+    const im = new THREE.InstancedMesh(geo[k], mat[k], L.length);
+    L.forEach((c,i) => { tmp.position.set(c.x, c.y, c.z); tmp.rotation.set(0, k==='stoneSq'?Math.PI/4:0, 0); tmp.scale.set(c.r, c.h, c.r); tmp.updateMatrix(); im.setMatrixAt(i, tmp.matrix); });
+    scene.add(im);
+  }
+}
+
+/* ================= building kits ================= */
+// hall: closed body with columns + roof (tiers 1|2). Solid footprint.
+function hall(o){
+  const {x, z, w, d} = o, ry = o.ry || 0, plain = !!o.plain;
+  const base = o.base ?? 0;            // ground y
+  const pH = o.platform ?? 0.8, bodyH = o.bodyH ?? 4.8;
+  const rot = (px, pz) => ry ? [x + px*Math.cos(ry) + pz*Math.sin(ry), z - px*Math.sin(ry) + pz*Math.cos(ry)] : [x+px, z+pz];
+  // platform
+  const pw = w + 4, pd = d + 4;
+  add(new THREE.BoxGeometry(pw, pH, pd), M.stone, x, base + pH/2, z, ry);
+  // stairs (front)
+  const [sx, sz] = rot(0, pd/2 + 0.6); add(new THREE.BoxGeometry(4, pH*0.5, 1.2), M.stone, sx, base + pH*0.25, sz, ry);
+  // body
+  const y0 = base + pH;
+  add(new THREE.BoxGeometry(w - 1.2, bodyH, d - 1.2), bodyMat(w, plain), x, y0 + bodyH/2, z, ry);
+  // columns
+  const nx = Math.max(3, Math.round(w/3.4)), nz = Math.max(2, Math.round(d/3.4));
+  for (let i=0;i<=nx;i++) for (const sz2 of [-1,1]){ const [cx, cz] = rot(-w/2 + 0.4 + (w-0.8)*i/nx, sz2*(d/2 - 0.4)); col(plain?'red':'red', cx, y0, bodyH, cz, 0.32); }
+  for (let j=1;j<nz;j++) for (const sx2 of [-1,1]){ const [cx, cz] = rot(sx2*(w/2 - 0.4), -d/2 + 0.4 + (d-0.8)*j/nz); col('red', cx, y0, bodyH, cz, 0.32); }
+  // roofs
+  const ey = y0 + bodyH + 0.35;
+  if (o.tiers === 2){
+    roof(x, ey, z, w + 7, d + 7, d*0.22, {noRidge:true, ridgeK:0.9, ry});
+    const ub = d*0.22 + ey - 0.4, uw = w*0.82, ud = d*0.72, uh = 3.2;
+    add(new THREE.BoxGeometry(uw, uh, ud), bodyMat(uw, plain), x, ub + uh/2, z, ry);
+    roof(x, ub + uh + 0.3, z, uw + 6, ud + 6, ud*0.62, {ry});
+    if (o.sign){ const [qx, qz] = rot(0, ud/2 + 0.08); sign(o.sign, qx, ub + uh*0.55, qz, 4.2, ry); }
+  } else {
+    roof(x, ey, z, w + 5.5, d + 5.5, (d + 5.5)*0.42, {noRidge:o.noRidge, plain, ry});
+    if (o.sign){ const [qx, qz] = rot(0, d/2 - 0.5); sign(o.sign, qx, y0 + bodyH - 0.9, qz, Math.min(4, w*0.2), ry); }
+  }
+  // collision
+  const hx = (ry ? pd : pw)/2, hz = (ry ? pw : pd)/2;
+  solid(x - hx, z - hz, x + hx, z + hz, plain ? '#8f7a5c' : '#5a6068');
+}
+// open gate: platform, columns, central doors swung open, roof. Columns are discs only.
+function gate(o){
+  const {x, z, w, d, sign:sg} = o, h = o.h ?? 5;
+  add(new THREE.BoxGeometry(w + 2, 0.4, d + 2), M.stone, x, 0.2, z);
+  const nx = 3;
+  for (let i=0;i<=nx;i++) for (const s of [-1,1]){ const cx = x - w/2 + w*i/nx, cz = z + s*d/2*0.7; col('red', cx, 0.4, h, cz, 0.36); discs.push({x:cx, z:cz, r:0.5}); }
+  for (let i=0;i<=nx;i++){ const cx = x - w/2 + w*i/nx; col('red', cx, 0.4, h, z, 0.36); if (i===0||i===nx) discs.push({x:cx, z, r:0.5}); }
+  // swung doors on the middle line
+  for (let i=0;i<nx;i++){ const cx = x - w/2 + w*(i+0.5)/nx, bw = w/nx; for (const s of [-1,1]){ const dm = add(new THREE.BoxGeometry(bw/2 - 0.2, h*0.75, 0.15), M.door, cx + s*(bw/2 - 0.35), 0.4 + h*0.375, z + 1.0*0 + (bw/4)*0.98, s*Math.PI/2*0.98); dm.position.x = cx + s*(bw/2 - 0.25); dm.position.z = z + bw/4 - 0.1; } }
+  // beam band
+  add(new THREE.BoxGeometry(w + 0.6, 0.9, d*0.75), M.green, x, 0.4 + h + 0.45, z);
+  roof(x, 0.4 + h + 0.9, z, w + 6, d + 6, (d+6)*0.45, {ridgeK:0.65});
+  if (sg) sign(sg, x, 0.4 + h - 0.2, z + d*0.38 + 0.2, Math.min(3.6, w*0.24));
+  mapShapes.push({type:'rect', x0:x-w/2, z0:z-d/2, x1:x+w/2, z1:z+d/2, color:'#7d6a58'});
+}
+// palace wall segment along x or z. gaps handled by caller.
+function wall(x0, z0, x1, z1, h=4.2, t=1.6){
+  const len = Math.hypot(x1-x0, z1-z0); if (len < 0.5) return;
+  const cx = (x0+x1)/2, cz = (z0+z1)/2, ry = Math.atan2(-(z1-z0), x1-x0);
+  add(new THREE.BoxGeometry(len, h, t), texMat(T.wall, Math.max(1, len/7), 1), cx, h/2, cz, ry);
+  roof(cx, h, cz, len + 0.8, t + 1.6, 0.9, {ry, ridgeK:0.0, lift:0.05, noBand:true, noRidge:false});
+  solid(Math.min(x0,x1) - (z0===z1?0:t/2), Math.min(z0,z1) - (x0===x1?0:t/2), Math.max(x0,x1) + (z0===z1?0:t/2), Math.max(z0,z1) + (x0===x1?0:t/2), '#a8774f');
+}
+// corridor (행각): long closed building along a line
+function corridor(x0, z0, x1, z1, depth=6){
+  const len = Math.hypot(x1-x0, z1-z0); if (len < 1) return;
+  const cx = (x0+x1)/2, cz = (z0+z1)/2, ry = Math.atan2(-(z1-z0), x1-x0), h = 3.6;
+  add(new THREE.BoxGeometry(len, 0.5, depth + 1), M.stone, cx, 0.25, cz, ry);
+  add(new THREE.BoxGeometry(len, h, depth - 1), bodyMat(len, false), cx, 0.5 + h/2, cz, ry);
+  roof(cx, 0.5 + h + 0.3, cz, len + 1.2, depth + 3, 2.2, {ry, ridgeK:0.0, lift:0.15});
+  const horiz = z0 === z1;
+  solid(horiz ? Math.min(x0,x1) : cx - (depth+1)/2, horiz ? cz - (depth+1)/2 : Math.min(z0,z1), horiz ? Math.max(x0,x1) : cx + (depth+1)/2, horiz ? cz + (depth+1)/2 : Math.max(z0,z1), '#6f5a4b');
+}
+// water body
+const waterMat = lam({map:T.water, transparent:true, opacity:0.92});
+function pondRect(x0, z0, x1, z1, island){
+  const w = x1-x0, d = z1-z0, t = T.water.clone(); t.needsUpdate = true; t.repeat.set(w/12, d/12);
+  plane(w, d, lam({map:t}), (x0+x1)/2, 0.05, (z0+z1)/2);
+  for (const [a,b,c,e] of [[x0,z0-0.8,x1,z0],[x0,z1,x1,z1+0.8],[x0-0.8,z0-0.8,x0,z1+0.8],[x1,z0-0.8,x1+0.8,z1+0.8]]) add(new THREE.BoxGeometry(c-a, 0.6, e-b), M.stone, (a+c)/2, 0.3, (b+e)/2);
+  waters.push({x0, z0, x1, z1, island}); mapShapes.push({type:'rect', x0, z0, x1, z1, color:'#4f8fa5'});
+}
+function pondCircle(x, z, r, island){
+  const t = T.water.clone(); t.needsUpdate = true; t.repeat.set(r/6, r/6);
+  const m = add(new THREE.CircleGeometry(r, 48), lam({map:t}), x, 0.05, z); m.rotation.x = -Math.PI/2;
+  add(new THREE.CylinderGeometry(r + 0.6, r + 0.6, 0.6, 48, 1, true), M.stone, x, 0.3, z);
+  waters.push({x, z, r, circle:true, island}); mapShapes.push({type:'circle', x, z, r, color:'#4f8fa5'});
+}
+
+/* ================= ground ================= */
+plane(560, 720, texMat(T.gravel, 90, 115), 0, 0, -10);
+const lawnMat = (w,d) => texMat(T.grass, w/10, d/10);
+const LAWNS = [[-160,-190,-75,-130],[ 95,-235,165,-170],[-165,-320,-30,-275],[60,-262,165,-240],[-160,-25,-75,105],[75,-110,160,105],[-160,170,-90,222],[95,170,160,222],[-70,-205,-30,-170],[30,-205,60,-170],[-165,-265,-60,-205],[105,-175,165,-115]];
+for (const [x0,z0,x1,z1] of LAWNS){ plane(x1-x0, z1-z0, lawnMat(x1-x0, z1-z0), (x0+x1)/2, 0.03, (z0+z1)/2); mapShapes.push({type:'rect', x0, z0, x1, z1, color:'#556b3a', ground:true}); }
+// paving
+plane(10, 520, texMat(T.paving, 2, 104), 0, 0.04, 30);
+plane(240, 66, texMat(T.paving, 40, 11), 0, 0.035, 270);
+plane(116, 136, texMat(T.bakseok, 12, 14), 0, 0.03, 35);
+plane(146, 56, texMat(T.paving, 24, 9), 0, 0.03, 135);
+mapShapes.unshift({type:'rect', x0:-120, z0:238, x1:120, z1:303, color:'#8f8a80', ground:true});
+mapShapes.unshift({type:'rect', x0:-58, z0:-33, x1:58, z1:103, color:'#8f877a', ground:true});
+mapShapes.unshift({type:'rect', x0:-5, z0:-230, x1:5, z1:290, color:'#9b9283', ground:true});
+
+/* ================= layout (meters, ~70% of real) ================= */
+// --- outer wall
+const OW = {x0:-170, x1:170, z0:-320, z1:232};
+wall(OW.x0, OW.z1, -23, OW.z1, 5.5, 2.4); wall(23, OW.z1, OW.x1, OW.z1, 5.5, 2.4);
+wall(OW.x0, OW.z0, OW.x1, OW.z0, 5.5, 2.4);
+wall(OW.x0, OW.z0, OW.x0, OW.z1, 5.5, 2.4); wall(OW.x1, OW.z0, OW.x1, OW.z1, 5.5, 2.4);
+// --- Gwanghwamun (stone base with three arches + two-storey pavilion)
+(function gwanghwamun(){
+  const sh = new THREE.Shape(); sh.moveTo(-23, 0); sh.lineTo(23, 0); sh.lineTo(23, 8.5); sh.lineTo(-23, 8.5); sh.lineTo(-23, 0);
+  for (const [cx, hw] of [[0, 3.2], [-10.5, 2.4], [10.5, 2.4]]){
+    const p = new THREE.Path(); const top = 4.2; p.moveTo(cx - hw, 0); p.lineTo(cx - hw, top); p.absarc(cx, top, hw, Math.PI, 0, true); p.lineTo(cx + hw, 0); p.lineTo(cx - hw, 0); sh.holes.push(p);
+  }
+  const geo = new THREE.ExtrudeGeometry(sh, {depth:13, bevelEnabled:false, curveSegments:16});
+  const t = T.stone.clone(); t.needsUpdate = true; t.repeat.set(0.12, 0.12);
+  const m = add(geo, lam({map:t}), 0, 0, OW.z1 - 6.5);
+  // arch interiors darker
+  // collision piers
+  const z0 = OW.z1 - 6.5, z1 = OW.z1 + 6.5;
+  for (const [a,b] of [[-23,-12.9],[-8.1,-3.2],[3.2,8.1],[12.9,23]]) solid(a, z0, b, z1);
+  mapShapes.push({type:'rect', x0:-23, z0, x1:23, z1, color:'#b8ae98'});
+  // pavilion
+  const y = 8.5, w1 = 30, d1 = 10;
+  add(new THREE.BoxGeometry(w1 - 1, 3.4, d1 - 1), bodyMat(w1), 0, y + 1.7, OW.z1);
+  for (let i=0;i<=8;i++) for (const s of [-1,1]) col('red', -w1/2 + w1*i/8, y, 3.4, OW.z1 + s*d1/2, 0.3);
+  roof(0, y + 3.7, OW.z1, w1 + 6, d1 + 6, 2.2, {noRidge:true, ridgeK:0.9});
+  add(new THREE.BoxGeometry(24, 3, 7.5), bodyMat(24), 0, y + 5.7 + 1.5, OW.z1);
+  roof(0, y + 8.9, OW.z1, 30, 13.5, 5.6, {ridgeK:0.55});
+  sign('光化門', 0, y + 7.4, OW.z1 + 3.82, 4.2);
+  // haechi statues
+  for (const s of [-1,1]) haechiStatue(s*14, OW.z1 + 18);
+})();
+function haechiStatue(x, z){
+  add(new THREE.BoxGeometry(2.4, 1.2, 3.2), M.stone, x, 0.6, z);
+  const body = add(new THREE.SphereGeometry(1, 12, 10), M.stoneDark, x, 2.1, z); body.scale.set(0.9, 0.85, 1.3);
+  add(new THREE.SphereGeometry(0.8, 12, 10), M.stoneDark, x, 3.3, z + 0.7);
+  for (const a of [-0.5,0,0.5]) add(new THREE.SphereGeometry(0.38, 8, 6), M.stoneDark, x + a, 3.9, z + 0.4);
+  solid(x - 1.2, z - 1.6, x + 1.2, z + 1.6);
+}
+// --- Heungnyemun courtyard
+const HZ = 165;
+gate({x:0, z:HZ, w:15, d:7, sign:'興禮門'});
+corridor(-80, HZ, -8.5, HZ); corridor(8.5, HZ, 80, HZ);
+corridor(-77, HZ-3, -77, 112); corridor(77, HZ-3, 77, 112);
+// Geumcheon + Yeongjegyo
+pondRect(-50, 129, -5, 136); pondRect(5, 129, 50, 136);
+waters.push({x0:-5, z0:129, x1:5, z1:136, island:null}); // area under bridge counted as water...
+walks.push({x0:-4.6, z0:124, x1:4.6, z1:141});
+add(new THREE.BoxGeometry(10, 0.7, 17), M.stone, 0, 0.35, 132.5);
+for (const s of [-1,1]){ add(new THREE.BoxGeometry(0.4, 0.8, 17), M.stoneDark, s*4.8, 1.1, 132.5); }
+heights.push({x0:-5, z0:124, x1:5, z1:141, h:0.7});
+for (const [sx, sz] of [[-7.5,127],[7.5,127],[-7.5,138],[7.5,138]]){ add(new THREE.SphereGeometry(0.7,10,8), M.stoneDark, sx, 0.7, sz).scale.set(1,0.8,1.3); }
+// --- Geunjeongmun & courtyard corridors
+const GZ = 105;
+gate({x:0, z:GZ, w:15, d:7, sign:'勤政門'});
+corridor(-80, GZ, -8.5, GZ); corridor(8.5, GZ, 80, GZ);
+corridor(-61, GZ-3.5, -61, 45); corridor(-61, 35, -61, -33);
+corridor(61, GZ-3.5, 61, 45); corridor(61, 35, 61, -33);
+corridor(-61, -36, -7, -36); corridor(7, -36, 61, -36);
+// rank stones (품계석)
+for (let i=0;i<12;i++){ for (const s of [-1,1]){ const z = 96 - i*4.2; add(new THREE.BoxGeometry(0.6, 1.0 + (11-i)*0.02, 0.6), M.stoneDark, s*7.5, 0.5, z); discs.push({x:s*7.5, z, r:0.35}); } }
+// --- Geunjeongjeon on two-tier terrace (월대)
+(function geunjeongjeon(){
+  const z = 10;
+  add(new THREE.BoxGeometry(52, 1.0, 42), M.stone, 0, 0.5, z);
+  add(new THREE.BoxGeometry(42, 1.0, 33), M.stone, 0, 1.5, z - 2);
+  heights.push({x0:-26, z0:z-21, x1:26, z1:z+21, h:1.0});
+  heights.push({x0:-21, z0:z-18.5, x1:21, z1:z+14.5, h:2.0});
+  // balustrades with stair gaps
+  const rail = (x0, z0, x1, z1, y) => { const len = Math.hypot(x1-x0, z1-z0); add(new THREE.BoxGeometry(len, 0.55, 0.3), M.ridge, (x0+x1)/2, y, (z0+z1)/2, Math.atan2(-(z1-z0), x1-x0)); };
+  for (const s of [-1,1]){ rail(s*26, z-21, s*26, z+21, 1.25); rail(s*21, z-18.5, s*21, z+14.5, 2.25); rail(s*26, z+21, s*4, z+21, 1.25); rail(s*21, z+14.5, s*4, z+14.5, 2.25); }
+  rail(-26, z-21, 26, z-21, 1.25); rail(-21, z-18.5, 21, z-18.5, 2.25);
+  hall({x:0, z:z-3, w:28, d:18, base:2.0, platform:0.5, bodyH:6.2, tiers:2, sign:'勤政殿'});
+  // bronze vessels (드므)
+  for (const s of [-1,1]) add(new THREE.CylinderGeometry(0.8, 0.6, 1.0, 12), lam({color:0x5a4a2c}), s*16, 2.5, z + 12);
+})();
+// --- inner area
+hall({x:0, z:-58, w:19, d:12, sign:'思政殿'});
+for (const s of [-1,1]) hall({x:s*22, z:-58, w:10, d:8, plain:false});
+wall(-61, -80, -6, -80, 3.6); wall(6, -80, 61, -80, 3.6);
+gate({x:0, z:-80, w:8, d:4, h:4});
+hall({x:0, z:-100, w:28, d:12, noRidge:true, sign:'康寧殿'});
+for (const s of [-1,1]) hall({x:s*24, z:-100, w:12, d:8});
+wall(-61, -120, -6, -120, 3.6); wall(6, -120, 61, -120, 3.6);
+gate({x:0, z:-120, w:8, d:4, h:4});
+hall({x:0, z:-140, w:26, d:12, noRidge:true, sign:'交泰殿'});
+wall(-61, -80, -61, -170, 3.6); wall(61, -80, 61, -125, 3.6); wall(61, -137, 61, -170, 3.6);
+// Amisan terraces + chimneys
+(function amisan(){
+  for (let i=0;i<4;i++){ add(new THREE.BoxGeometry(34 - i*4, 0.9, 5), M.stone, 0, 0.45 + i*0.9, -154 - i*4); add(new THREE.BoxGeometry(32 - i*4, 0.12, 4.4), texMat(T.grass, 3, 1), 0, 0.9 + i*0.9 + 0.06, -154 - i*4); }
+  solid(-17, -170, 17, -151.5, '#6b7d4f');
+  const flowers = new THREE.InstancedMesh(new THREE.SphereGeometry(0.22, 6, 4), lam({color:0xffffff}), 160), tmp = new THREE.Object3D(), cols = [0xd2563f,0xe8b93c,0xf3e7d0,0xb0405a];
+  for (let i=0;i<160;i++){ const t = i%4; tmp.position.set(-15 + rnd()*30 - 0, 1.05 + t*0.9, -154 - t*4 + (rnd()-0.5)*3.6); tmp.updateMatrix(); flowers.setMatrixAt(i, tmp.matrix); flowers.setColorAt(i, new THREE.Color(cols[i%4])); }
+  scene.add(flowers);
+  const cm = texMat(T.brick, 1, 1);
+  for (const x of [-9, -3, 3, 9]){ add(new THREE.CylinderGeometry(0.9, 0.9, 3.6, 6), cm, x, 3.7 + 1.8, -166); add(new THREE.CylinderGeometry(1.2, 1.1, 0.5, 6), M.dark, x, 3.7 + 3.85, -166); }
+})();
+// Jagyeongjeon with flower wall
+wall(52, -160, 98, -160, 3.4); wall(52, -160, 52, -120, 3.4); wall(98, -160, 98, -120, 3.4); wall(52, -120, 70, -120, 3.4); wall(80, -120, 98, -120, 3.4);
+hall({x:75, z:-142, w:20, d:11, sign:'慈慶殿'});
+for (const x of [68, 75, 82]) { add(new THREE.BoxGeometry(2.2, 4.5, 1.6), texMat(T.brick, 1, 1), x, 2.25, -157.8); }
+// Sujeongjeon
+hall({x:-100, z:30, w:28, d:12, sign:'修政殿'});
+// Gyeonghoeru
+(function gyeonghoeru(){
+  const cx = -122, cz = -72, x0 = -155, x1 = -90, z0 = -112, z1 = -32;
+  const island = {x0:-140, z0:-87, x1:-104, z1:-57};
+  pondRect(x0, z0, x1, z1, island);
+  add(new THREE.BoxGeometry(36, 1.0, 30), M.stone, cx, 0.5, cz);
+  heights.push({...island, h:1.0});
+  // bridge to east shore
+  add(new THREE.BoxGeometry(14, 0.6, 6), M.stone, -97, 0.7, cz); for (const s of [-1,1]) add(new THREE.BoxGeometry(14, 0.6, 0.3), M.ridge, -97, 1.3, cz + s*3);
+  walks.push({x0:-104.5, z0:cz-2.6, x1:-89, z1:cz+2.6}); heights.push({x0:-104.5, z0:cz-3, x1:-88, z1:cz+3, h:1.0});
+  // 48 stone pillars: 6 x 8 grid
+  const gw = 28, gd = 20;
+  for (let i=0;i<8;i++) for (let j=0;j<6;j++){
+    const px = cx - gw/2 + gw*i/7, pz = cz - gd/2 + gd*j/5, outer = i===0||i===7||j===0||j===5;
+    col(outer ? 'stoneSq' : 'stoneRd', px, 1.0, 5.2, pz, outer ? 0.62 : 0.5); discs.push({x:px, z:pz, r:0.55});
+  }
+  add(new THREE.BoxGeometry(gw + 3, 0.7, gd + 3), M.wood, cx, 6.55, cz);
+  add(new THREE.BoxGeometry(gw + 3.2, 0.6, gd + 3.2), M.red, cx, 7.2, cz);
+  for (let i=0;i<=8;i++) for (const s of [-1,1]) col('red', cx - gw/2 - 1 + (gw+2)*i/8, 6.9, 3.6, cz + s*(gd/2 + 1), 0.3);
+  for (let j=1;j<6;j++) for (const s of [-1,1]) col('red', cx + s*(gw/2 + 1), 6.9, 3.6, cz - gd/2 - 1 + (gd+2)*j/6, 0.3);
+  add(new THREE.BoxGeometry(gw + 2.2, 0.9, gd + 2.2), M.green, cx, 10.95, cz);
+  roof(cx, 11.4, cz, gw + 10, gd + 10, 8.5, {ridgeK:0.6});
+  sign('慶會樓', -122 + 0, 9.6, cz + gd/2 + 1.25, 3.6, 0);
+  mapShapes.push({type:'rect', x0:cx-gw/2-1.5, z0:cz-gd/2-1.5, x1:cx+gw/2+1.5, z1:cz+gd/2+1.5, color:'#5a6068'});
+})();
+// Hyangwonjeong
+(function hyangwonjeong(){
+  const cx = 0, cz = -238, R = 25;
+  pondCircle(cx, cz, R, 8);
+  add(new THREE.CylinderGeometry(8, 8.3, 1.0, 32), M.stone, cx, 0.5, cz);
+  add(new THREE.CylinderGeometry(7.6, 7.6, 0.1, 32), texMat(T.grass, 2, 2), cx, 1.05, cz);
+  heights.push({x0:cx-8, z0:cz-8, x1:cx+8, z1:cz+8, h:1.0});
+  // bridge north (취향교)
+  add(new THREE.BoxGeometry(3.2, 0.4, 20), M.wood, cx, 1.0, cz - 17); for (const s of [-1,1]) add(new THREE.BoxGeometry(0.2, 0.9, 20), M.red, cx + s*1.6, 1.6, cz - 17);
+  walks.push({x0:cx-1.5, z0:cz-28, x1:cx+1.5, z1:cz-6}); heights.push({x0:cx-1.7, z0:cz-28, x1:cx+1.7, z1:cz-7, h:1.0, ramp:{axis:'z', a:cz-28, b:cz-25, h0:0, h1:1.0}});
+  // pavilion
+  add(new THREE.CylinderGeometry(4.8, 5, 0.7, 6), M.stone, cx, 1.35, cz);
+  for (let i=0;i<6;i++){ const a = Math.PI/6 + i*Math.PI/3; col('red', cx + Math.cos(a)*3.8, 1.7, 2.8, cz + Math.sin(a)*3.8, 0.24); discs.push({x:cx + Math.cos(a)*3.8, z:cz + Math.sin(a)*3.8, r:0.35}); }
+  add(new THREE.CylinderGeometry(4.6, 4.6, 0.5, 6), M.wood, cx, 4.75, cz);
+  const r1 = add(new THREE.ConeGeometry(6.2, 1.8, 6, 1, true), roofMatShared, cx, 5.6, cz);
+  add(new THREE.CylinderGeometry(3.3, 3.3, 2.0, 6), lam({color:0xe9dbbd}), cx, 6.9, cz);
+  for (let i=0;i<6;i++){ const a = Math.PI/6 + i*Math.PI/3; col('red', cx + Math.cos(a)*3.35, 5.9, 2.0, cz + Math.sin(a)*3.35, 0.2); }
+  add(new THREE.ConeGeometry(5.4, 3.2, 6), roofMatShared, cx, 9.4, cz);
+  add(new THREE.SphereGeometry(0.5, 10, 8), M.gold, cx, 11.2, cz);
+  solid(cx-1.2, cz-1.2, cx+1.2, cz+1.2);
+  // lotus leaves
+  const lily = new THREE.InstancedMesh(new THREE.CircleGeometry(0.9, 8), lam({color:0x5f7d3e}), 40), tmp = new THREE.Object3D();
+  for (let i=0;i<40;i++){ const a = rnd()*Math.PI*2, d = 10 + rnd()*13; tmp.position.set(cx + Math.cos(a)*d, 0.09, cz + Math.sin(a)*d); tmp.rotation.set(-Math.PI/2, 0, rnd()*6); tmp.updateMatrix(); lily.setMatrixAt(i, tmp.matrix); }
+  scene.add(lily);
+})();
+// Geoncheonggung (plain, unpainted)
+wall(-30, -305, 70, -305, 3.2); wall(-30, -305, -30, -270, 3.2); wall(70, -305, 70, -270, 3.2); wall(-30, -270, 30, -270, 3.2); wall(42, -270, 70, -270, 3.2);
+hall({x:36, z:-292, w:26, d:10, plain:true, sign:'長安堂'});
+hall({x:-12, z:-290, w:14, d:9, plain:true});
+// Bugaksan & Inwangsan backdrop
+function mountain(x, z, rx, ry, rz, color, sd){
+  const g = new THREE.IcosahedronGeometry(1, 3), p = g.attributes.position;
+  let s2 = sd; const r2 = () => { s2 = (s2 * 16807) % 2147483647; return (s2 - 1) / 2147483646; };
+  for (let i=0;i<p.count;i++){ const y = p.getY(i); const k = 1 + (r2()-0.5)*0.18 + (y > 0.6 ? (r2()-0.5)*0.25 : 0); p.setXYZ(i, p.getX(i)*k, Math.max(-0.05, y)*k, p.getZ(i)*k); }
+  g.computeVertexNormals();
+  const m = add(g, lam({color, flatShading:true, fog:false}), x, 0, z); m.scale.set(rx, ry, rz); return m;
+}
+mountain(20, -640, 300, 250, 180, 0x6f8466, 11);
+mountain(-280, -560, 200, 150, 160, 0x7a8b6c, 23);
+mountain(260, -590, 220, 130, 150, 0x7f8f70, 37);
+mountain(-560, -120, 220, 190, 260, 0x8a9a7a, 41);
+mountain(150, 820, 260, 120, 160, 0x839275, 53);
+
+/* ================= trees ================= */
+const trees = [];
+(function plant(){
+  const zones = [...LAWNS, [-160,-110,-155,-30]];
+  const near = (x,z,d) => blocked(x, z, d);
+  let tries = 0;
+  while (trees.length < 360 && tries++ < 20000){
+    const zn = zones[(rnd()*zones.length)|0];
+    const x = zn[0] + rnd()*(zn[2]-zn[0]), z = zn[1] + rnd()*(zn[3]-zn[1]);
+    if (Math.abs(x) < 9) continue;
+    if (near(x, z, 3.0)) continue;
+    if (trees.some(t => (t.x-x)**2 + (t.z-z)**2 < 30)) continue;
+    const k = rnd(); trees.push({x, z, kind: k < .36 ? 'ginkgo' : k < .62 ? 'maple' : 'pine', s: 0.8 + rnd()*0.6});
+  }
+  // plaza ginkgo rows
+  for (let z=250; z<300; z+=10) for (const x of [-34,-26,26,34]) trees.push({x, z, kind:'ginkgo', s:1.1});
+  const tmp = new THREE.Object3D();
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.4, 1, 6), lam({color:0x6b4a32}), trees.length);
+  const kinds = {ginkgo:[], maple:[], pine:[]};
+  trees.forEach((t,i) => { tmp.position.set(t.x, 2*t.s, t.z); tmp.scale.set(t.s, 4*t.s, t.s); tmp.rotation.set(0,0,0); tmp.updateMatrix(); trunk.setMatrixAt(i, tmp.matrix); kinds[t.kind].push(t); discs.push({x:t.x, z:t.z, r:0.5}); });
+  scene.add(trunk);
+  const canopy = (list, geo, colorList, y, sc) => { if (!list.length) return; const im = new THREE.InstancedMesh(geo, lam({color:0xffffff}), list.length);
+    list.forEach((t,i) => { tmp.position.set(t.x, y*t.s, t.z); tmp.scale.set(sc[0]*t.s, sc[1]*t.s, sc[0]*t.s); tmp.rotation.set(0, rnd()*6, 0); tmp.updateMatrix(); im.setMatrixAt(i, tmp.matrix); im.setColorAt(i, new THREE.Color(colorList[i % colorList.length])); }); scene.add(im); };
+  canopy(kinds.ginkgo, new THREE.IcosahedronGeometry(1, 0), [0xe4b63a,0xf0c94e,0xd9a72c], 6.2, [2.8, 3.8]);
+  canopy(kinds.maple, new THREE.IcosahedronGeometry(1, 0), [0xc8452f,0xdb5c3a,0xb33a26,0xe07a3c], 5.2, [3.2, 2.6]);
+  canopy(kinds.pine, new THREE.ConeGeometry(1, 1, 7), [0x3f6a46,0x4d7a50,0x365c3d], 6.5, [2.8, 5.2]);
+  canopy(kinds.pine, new THREE.ConeGeometry(1, 1, 7), [0x4d7a50,0x3f6a46], 9.0, [2.0, 3.6]);
+})();
+
+/* ================= lanterns ================= */
+const lanternSpots = [];
+for (let z = 285; z > -230; z -= 22) for (const s of [-1,1]) if (!blocked(s*6.5, z, 1)) lanternSpots.push([s*6.5, z]);
+(function(){
+  const tmp = new THREE.Object3D();
+  const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.08, 0.08, 2.6, 5), M.dark, lanternSpots.length);
+  const lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.6, 0.8, 0.6), M.lantern, lanternSpots.length);
+  lanternSpots.forEach(([x,z],i) => { tmp.position.set(x, 1.3, z); tmp.updateMatrix(); pole.setMatrixAt(i, tmp.matrix); tmp.position.set(x, 2.9, z); tmp.updateMatrix(); lamp.setMatrixAt(i, tmp.matrix); });
+  scene.add(pole, lamp);
+})();
+flushColumns();
+
+/* ================= stars (night) ================= */
+const stars = (function(){
+  const n = 700, p = new Float32Array(n*3);
+  for (let i=0;i<n;i++){ const a = rnd()*Math.PI*2, e = 0.08 + rnd()*1.3, r = 900; p[i*3] = Math.cos(a)*Math.cos(e)*r; p[i*3+1] = Math.sin(e)*r; p[i*3+2] = Math.sin(a)*Math.cos(e)*r; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  const s = new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:2, sizeAttenuation:false, fog:false})); s.visible = false; scene.add(s); return s;
+})();
+const moon = add(new THREE.SphereGeometry(18, 16, 12), new THREE.MeshBasicMaterial({color:0xfff3d0, fog:false}), -300, 420, -700); moon.visible = false;
+
+/* ================= spots & story ================= */
+const SPOTS = [
+ {id:'gwanghwamun', name:'광화문', x:0, z:252, pages:[
+  '경복궁의 정문, 광화문이에요. "임금의 큰 덕이 온 나라를 비춘다"는 뜻을 담고 있어요.',
+  '1395년 궁궐과 함께 세워졌고 임진왜란 때 불탔다가 1865년 고종 때 다시 지었어요. 일제강점기에는 자리를 옮기고, 한국전쟁 때 문루가 불타는 수난을 겪었죠.',
+  '지금 모습은 2010년 원래 자리와 모습을 되찾아 복원한 거예요. 세 홍예문 가운데 가운데 문은 임금만 지나다닐 수 있었답니다.']},
+ {id:'heungnyemun', name:'흥례문', x:0, z:176, pages:[
+  '광화문과 근정문 사이의 두 번째 문, 흥례문이에요.',
+  '일제가 조선총독부 청사를 지으면서 헐어 버렸고, 청사를 철거한 뒤 2001년에 다시 세웠어요.']},
+ {id:'yeongjegyo', name:'영제교', x:0, z:145, pages:[
+  '궁궐 안으로 흐르는 물길 금천(禁川)과 그 위의 돌다리 영제교예요. 금천은 바깥 세상과 궁궐을 나누는 경계를 뜻해요.',
+  '다리 양쪽 물가의 돌짐승 "천록"을 찾아보세요. 나쁜 기운이 물길을 타고 들어오지 못하게 지킨대요.']},
+ {id:'geunjeongjeon', name:'근정전', x:0, z:40, pages:[
+  '경복궁의 으뜸 건물, 국보 근정전이에요. 즉위식, 신하들의 조회, 외국 사신 접견 같은 나라의 큰 행사가 열렸어요.',
+  '"근정(勤政)"은 "부지런히 정치하라"는 뜻으로, 정도전이 지은 이름이에요. 지금 건물은 1867년 고종 때 다시 지은 거예요.',
+  '마당 양쪽에 줄지어 선 돌이 품계석이에요. 신하들이 정1품부터 종9품까지 자기 품계에 맞춰 섰답니다. 두 단의 돌 기단(월대)에도 올라가 보세요.']},
+ {id:'sajeongjeon', name:'사정전', x:0, z:-44, pages:[
+  '임금이 평소 신하들과 나랏일을 의논하고, 학문을 토론하는 경연을 열던 편전 사정전이에요.',
+  '"사정(思政)"은 "깊이 생각하여 정치하라"는 뜻이에요.']},
+ {id:'gangnyeongjeon', name:'강녕전', x:0, z:-87, pages:[
+  '임금이 잠자고 쉬던 침전, 강녕전이에요. 지붕 꼭대기에 용마루가 없는 게 특징이에요.',
+  '일제강점기에 창덕궁 희정당을 다시 짓는 데 쓰려고 헐려 나갔다가, 1995년에 복원되었어요.']},
+ {id:'gyotaejeon', name:'교태전·아미산', x:0, z:-127, pages:[
+  '왕비가 머물던 중궁전, 교태전이에요. 강녕전처럼 용마루가 없어요.',
+  '건물 뒤편 계단식 꽃동산이 아미산이에요. 육각형 붉은 벽돌 굴뚝 네 개에 십장생과 길상 무늬가 새겨져 있고, 이 굴뚝은 보물로 지정되어 있어요.']},
+ {id:'jagyeongjeon', name:'자경전', x:75, z:-114, pages:[
+  '고종이 양어머니 신정왕후(조대비)를 위해 지은 대비전, 자경전이에요. 건물 자체가 보물이에요.',
+  '꽃담과 뒤뜰의 십장생 굴뚝은 궁궐 장식의 백미로 꼽혀요. 이 굴뚝도 보물로 지정되어 있답니다.']},
+ {id:'sujeongjeon', name:'수정전', x:-100, z:44, pages:[
+  '세종 때 집현전이 있던 자리에 세워진 수정전이에요. 한글 창제를 도운 학자들이 모였던 곳이죠.',
+  '지금 건물은 1867년 고종 때 지어졌고, 보물로 지정되어 있어요.']},
+ {id:'gyeonghoeru', name:'경회루', x:-84, z:-72, face:Math.PI/2, pages:[
+  '연못 위에 떠 있는 누각, 국보 경회루예요. 나라의 경사가 있을 때나 외국 사신을 맞을 때 연회가 열렸어요.',
+  '1867년 다시 지은 지금 건물은 48개의 돌기둥이 받치고 있어요. 바깥 기둥은 네모, 안쪽 기둥은 둥근데 "하늘은 둥글고 땅은 네모나다"는 생각을 담았다고 해요.',
+  '다리를 건너 섬으로 들어가 돌기둥 사이를 걸어 보세요.']},
+ {id:'hyangwonjeong', name:'향원정', x:0, z:-208, pages:[
+  '연못 한가운데 섬 위의 육각 2층 정자, 향원정이에요. 고종이 건청궁을 지을 무렵 함께 조성했어요.',
+  '정자로 건너가는 나무다리 취향교는 원래 북쪽 건청궁 쪽으로 놓여 있었는데, 복원 공사를 거쳐 2021년 원래 자리로 되돌아왔어요. 북쪽으로 돌아가 다리를 건너 보세요.']},
+ {id:'geoncheonggung', name:'건청궁', x:36, z:-262, pages:[
+  '궁궐 안의 또 다른 궁, 건청궁이에요. 1873년 고종이 단청을 칠하지 않고 사대부 집처럼 소박하게 지었어요.',
+  '1887년 이곳에서 우리나라 최초로 전등이 켜졌어요. 1895년 명성황후가 시해된 을미사변의 아픈 역사가 남은 곳이기도 해요. 지금 건물은 2007년 복원된 거예요.']},
+];
+const REGIONS = [
+ ['광화문 광장', -200, 232, 200, 310], ['흥례문 마당', -77, 108, 77, 232], ['근정전 조정', -61, -36, 61, 108], ['사정전', -61, -80, 61, -36],
+ ['강녕전', -61, -120, 61, -80], ['교태전·아미산', -61, -175, 61, -120], ['자경전', 52, -160, 98, -120], ['경회루', -160, -115, -78, -28],
+ ['수정전 일대', -160, -28, -61, 108], ['향원정', -40, -270, 40, -205], ['건청궁', -30, -305, 70, -270],
+];
+const regionAt = (x,z) => { for (const [n,x0,z0,x1,z1] of REGIONS) if (x>=x0 && x<=x1 && z>=z0 && z<=z1) return n; return '궁궐 숲길'; };
+let stamps = new Set(); try { stamps = new Set(JSON.parse(store.get('gbg3d.stamps') || '[]')); } catch(e){}
+
+// markers
+const ringGeo = new THREE.RingGeometry(1.6, 2.1, 32);
+function labelSprite(text, bg='rgba(15,28,23,.85)', fg='#eef2e8', border='#e8c87a', scale=1){
+  const c = document.createElement('canvas'), g = c.getContext('2d'); g.font = '700 30px "Gowun Dodum","Noto Sans KR",sans-serif';
+  const w = Math.ceil(g.measureText(text).width) + 40; c.width = w; c.height = 54; g.font = '700 30px "Gowun Dodum","Noto Sans KR",sans-serif';
+  g.fillStyle = bg; g.strokeStyle = border; g.lineWidth = 3; const r = 24; g.beginPath(); g.moveTo(r,2); g.arcTo(w-2,2,w-2,52,r); g.arcTo(w-2,52,2,52,r); g.arcTo(2,52,2,2,r); g.arcTo(2,2,w-2,2,r); g.fill(); g.stroke();
+  g.fillStyle = fg; g.textBaseline = 'middle'; g.fillText(text, 20, 28);
+  const t = new THREE.CanvasTexture(c); const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:t, depthTest:false, fog:false}));
+  sp.scale.set(w/54*0.9*scale, 0.9*scale, 1); sp.renderOrder = 10; return sp;
+}
+for (const s of SPOTS){
+  s.y = groundH(s.x, s.z);
+  const ring = add(ringGeo, new THREE.MeshBasicMaterial({color:0xe8c87a, transparent:true, opacity:0.85, side:THREE.DoubleSide}), s.x, s.y + 0.08, s.z); ring.rotation.x = -Math.PI/2; s.ring = ring;
+  const sp = labelSprite('! ' + s.name); sp.position.set(s.x, s.y + 4.2, s.z); scene.add(sp); s.sprite = sp;
+}
+
+/* ================= characters ================= */
+function makeRoyal(robeHex){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const robe = lam({color:robeHex}), skin = lam({color:0xf8dcc0}), black = lam({color:0x1b1d22}), white = lam({color:0xf4efe4}), pink = lam({color:0xf3a094});
+  const legs = [];
+  for (const sx of [-1,1]){ const b = new THREE.Group(); b.position.set(sx*0.13, 0.38, 0);
+    const boot = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.34, 8), black); boot.position.y = -0.17; b.add(boot);
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), black); toe.scale.set(1, 0.55, 1.45); toe.position.set(0, -0.33, 0.05); b.add(toe);
+    g.add(b); legs.push(b); }
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.44, 0.62, 18), robe); skirt.position.y = 0.6; body.add(skirt);
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.29, 0.36, 18), robe); chest.position.y = 1.08; body.add(chest);
+  const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 10, 0, Math.PI*2, 0, Math.PI/2), robe); shoulder.position.y = 1.24; shoulder.scale.set(1.08, 0.5, 1); body.add(shoulder);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.035, 6, 18), white); collar.rotation.x = Math.PI/2; collar.position.y = 1.29; body.add(collar);
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.045, 6, 22), black); belt.rotation.x = Math.PI/2; belt.position.set(0, 0.92, 0.02); body.add(belt);
+  for (let i=-2;i<=2;i++){ const st = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), M.gold); const a = i*0.32; st.position.set(Math.sin(a)*0.33, 0.92, Math.cos(a)*0.33 + 0.02); st.rotation.y = a; body.add(st); }
+  const bo = new THREE.Mesh(new THREE.CircleGeometry(0.12, 22), M.gold); bo.position.set(0, 1.09, 0.272); bo.rotation.x = -0.12; body.add(bo);
+  const boIn = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.075, 18), lam({color:0x7a1c18})); boIn.position.set(0, 1.09, 0.276); boIn.rotation.x = -0.12; body.add(boIn);
+  for (const sx of [-1,1]){ const sb = new THREE.Mesh(new THREE.CircleGeometry(0.08, 16), M.gold); sb.position.set(sx*0.17, 1.28, 0.08); sb.rotation.set(-Math.PI/2.4, 0, -sx*0.4); body.add(sb); }
+  for (const sx of [-1,1]){ const a = new THREE.Group(); a.position.set(sx*0.28, 1.22, 0);
+    const sl = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.15, 0.42, 10), robe); sl.position.y = -0.2; sl.rotation.z = sx*0.18; a.add(sl);
+    const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 6, 14), white); cuff.rotation.x = Math.PI/2; cuff.position.set(sx*0.04, -0.41, 0); a.add(cuff);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), skin); hand.position.set(sx*0.05, -0.47, 0); a.add(hand);
+    body.add(a); legs.push(a); }
+  const head = new THREE.Group(); head.position.y = 1.66; g.add(head);
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.31, 20, 16), skin); head.add(face);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.318, 20, 14, 0, Math.PI*2, 0, Math.PI*0.42), black); hair.rotation.x = -0.35; head.add(hair);
+  const hairB = new THREE.Mesh(new THREE.SphereGeometry(0.315, 16, 12, Math.PI*0.25, Math.PI*1.5, Math.PI*0.3, Math.PI*0.45), black); head.add(hairB);
+  for (const sx of [-1,1]){ const ear = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), skin); ear.position.set(sx*0.3, -0.02, 0); head.add(ear); }
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.16, 20), black); band.position.y = 0.2; band.rotation.x = -0.12; head.add(band);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 18, 12, 0, Math.PI*2, 0, Math.PI/2), black); dome.position.set(0, 0.27, 0.02); dome.scale.set(1, 0.9, 1); head.add(dome);
+  const back = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12, 0, Math.PI*2, 0, Math.PI/2), black); back.position.set(0, 0.3, -0.12); back.scale.set(1.05, 1.35, 0.8); head.add(back);
+  for (const sx of [-1,1]){ const w = new THREE.Mesh(new THREE.CircleGeometry(0.11, 14), lam({color:0x26282e, side:THREE.DoubleSide})); w.scale.set(0.75, 1.15, 1); w.position.set(sx*0.11, 0.6, -0.24); w.rotation.set(-0.25, sx*0.5, sx*0.35); head.add(w); }
+  const goldBand = new THREE.Mesh(new THREE.TorusGeometry(0.315, 0.012, 4, 24), M.gold); goldBand.rotation.x = Math.PI/2 - 0.12; goldBand.position.y = 0.13; head.add(goldBand);
+  for (const sx of [-1,1]){ const e = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), black); e.position.set(sx*0.1, 0.0, 0.28); e.scale.set(1, 1.35, 0.6); head.add(e);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 4), white); hl.position.set(sx*0.1 + 0.014, 0.022, 0.305); head.add(hl);
+    const br = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.016, 0.01), black); br.position.set(sx*0.1, 0.1, 0.29); br.rotation.z = -sx*0.12; head.add(br);
+    const ch = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), pink); ch.position.set(sx*0.17, -0.08, 0.24); ch.scale.set(1, 0.6, 0.4); head.add(ch); }
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.009, 4, 10, Math.PI), lam({color:0x8a3a30})); mouth.position.set(0, -0.09, 0.3); mouth.rotation.z = Math.PI; head.add(mouth);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.22, depthWrite:false})); shadow.rotation.x = -Math.PI/2; shadow.position.y = 0.04; g.add(shadow);
+  g.scale.setScalar(1.05);
+  scene.add(g);
+  return {g, legs, head, body, shadow, walk:0};
+}
+const HUES = [0xb3262a, 0x1f3f78, 0x2f6e5a, 0x6e3a7a, 0xc9852f, 0x355e9a, 0x8a2f3f, 0x3d3d48];
+let myHue = 0xb3262a;
+const me = makeRoyal(myHue);
+const player = {x:0, z:290, y:0, vy:0, air:false, heading:Math.PI, speed:0};
+let yaw = 0, pitch = -0.12, camDist = 5.4, firstPerson = false, running = false;
+
+function animateAvatar(h, moving, dt, speed, air, waving){
+  if (moving){ h.walk += dt * (speed > 6 ? 14 : 9); } else h.walk *= 0.85;
+  const sn = Math.sin(h.walk), a = moving ? 0.55 : 0;
+  h.legs[0].rotation.x = sn*a; h.legs[1].rotation.x = -sn*a;
+  h.legs[2].rotation.x = -sn*a*0.9; h.legs[3].rotation.x = sn*a*0.9;
+  h.legs[2].rotation.z = 0; h.legs[3].rotation.z = 0;
+  if (air){ h.legs[0].rotation.x = -0.5; h.legs[1].rotation.x = 0.35; h.legs[2].rotation.z = -0.9; h.legs[3].rotation.z = 0.9; }
+  if (waving){ h.legs[3].rotation.x = -2.5; h.legs[3].rotation.z = 0.3 + Math.sin(performance.now()*0.018)*0.35; }
+  const bob = moving && !air ? Math.abs(Math.cos(h.walk))*0.04 : 0;
+  h.body.position.y = bob;
+  h.head.position.y = 1.66 + bob + (!moving ? Math.sin(performance.now()*0.002)*0.012 : 0);
+  h.head.rotation.z = moving ? Math.sin(h.walk)*0.04 : 0;
+}
+
+/* ================= input ================= */
+const keys = {};
+const mv = {x:0, y:0};
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const k = e.key.toLowerCase(); keys[k] = true;
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  if (k === ' '){ if (dlg.open) act(); else jump(); }
+  if (k === 'e' || k === 'enter') act();
+  if (k === 'v') toggleView();
+  if (k === 'f') wave();
+  if (k === 'escape') closeBook();
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+let dragId = null, dragX = 0, dragY = 0, joyId = null, jx = 0, jy = 0;
+const joy = $('joy'), knob = $('knob');
+canvas.addEventListener('pointerdown', e => {
+  const r = vp.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (e.pointerType !== 'mouse' && x < r.width*0.45 && joyId === null){
+    joyId = e.pointerId; jx = x; jy = y; joy.style.left = x+'px'; joy.style.top = y+'px'; joy.hidden = false; knob.style.transform = 'translate(-50%,-50%)';
+  } else if (dragId === null){ dragId = e.pointerId; dragX = e.clientX; dragY = e.clientY; }
+  try { canvas.setPointerCapture(e.pointerId); } catch(_){}
+});
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId === joyId){
+    const r = vp.getBoundingClientRect(); let dx = e.clientX - r.left - jx, dy = e.clientY - r.top - jy; const d = Math.hypot(dx,dy), m = 46;
+    if (d > m){ dx = dx/d*m; dy = dy/d*m; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; mv.x = dx/m; mv.y = dy/m;
+  } else if (e.pointerId === dragId){
+    const k = e.pointerType === 'mouse' ? 0.0055 : 0.008;
+    yaw -= (e.clientX - dragX) * k; pitch -= (e.clientY - dragY) * k * 0.8; pitch = Math.max(-0.75, Math.min(0.55, pitch));
+    dragX = e.clientX; dragY = e.clientY;
+  }
+});
+const endP = e => { if (e.pointerId === joyId){ joyId = null; joy.hidden = true; mv.x = mv.y = 0; } if (e.pointerId === dragId) dragId = null; };
+canvas.addEventListener('pointerup', endP); canvas.addEventListener('pointercancel', endP);
+canvas.addEventListener('wheel', e => { e.preventDefault(); camDist = Math.max(3.5, Math.min(18, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); }, {passive:false});
+if (isTouch){ $('touchhint').hidden = false; $('runKey').hidden = true; document.querySelectorAll('.pckey').forEach(k => k.hidden = true); $('howto').textContent = '왼쪽 끌기로 걷기·방향 전환 · 오른쪽 끌기로 시야'; setTimeout(() => $('touchhint').hidden = true, 7000); }
+
+$('runBtn').addEventListener('click', () => { running = !running; $('runBtn').classList.toggle('on', running); });
+$('actBtn').addEventListener('click', act);
+$('prompt').addEventListener('click', act);
+$('dialog').addEventListener('click', act);
+$('waveBtn').addEventListener('click', wave);
+function jump(){ if (player.air || dlg.open) return; player.vy = 8.2; player.air = true; pushPresence(true); }
+$('jumpBtn').addEventListener('click', jump);
+function toggleView(){ firstPerson = !firstPerson; $('viewBtn').textContent = firstPerson ? '3인칭' : '1인칭'; me.g.visible = !firstPerson; }
+$('viewBtn').addEventListener('click', toggleView);
+let night = false;
+$('dayBtn').addEventListener('click', () => {
+  night = !night; const P = night ? NIGHT : DAY;
+  scene.background.setHex(P.sky); scene.fog.color.setHex(P.fog); hemi.color.setHex(P.hemiSky); hemi.groundColor.setHex(P.hemiGround); hemi.intensity = P.hemi; sun.color.setHex(P.sunColor); sun.intensity = P.sun;
+  stars.visible = night; moon.visible = night;
+  M.lantern.emissive.setHex(night ? 0xffb347 : 0x000000);
+  for (const m of M.bodies) m.emissive.setHex(night ? 0x5a3a14 : 0x000000);
+  $('dayBtn').textContent = night ? '☀ 낮' : '☾ 밤';
+});
+
+/* ================= dialog, stamps ================= */
+const dlg = {open:false, pages:[], i:0, shown:0, name:'', onEnd:null};
+function openDialog(name, pages, onEnd){ Object.assign(dlg, {open:true, pages, i:0, shown:0, name, onEnd}); $('dlgName').textContent = name; $('dialog').hidden = false; }
+function nearestSpot(){ let best = null, bd = 6.5; for (const s of SPOTS){ const d = Math.hypot(s.x-player.x, s.z-player.z); if (d < bd){ bd = d; best = s; } } return best; }
+function act(){
+  if (!$('book').hidden) return;
+  if (dlg.open){
+    const p = dlg.pages[dlg.i];
+    if (dlg.shown < p.length){ dlg.shown = p.length; return; }
+    if (++dlg.i >= dlg.pages.length){ dlg.open = false; $('dialog').hidden = true; const f = dlg.onEnd; dlg.onEnd = null; f && f(); } else dlg.shown = 0;
+    return;
+  }
+  const s = nearestSpot(); if (s) openDialog(s.name, s.pages, () => stamp(s));
+}
+let toastT = 0; function toast(t){ $('toast').textContent = t; $('toast').hidden = false; toastT = 2.6; }
+function stamp(s){ if (stamps.has(s.id)) return; stamps.add(s.id); store.set('gbg3d.stamps', JSON.stringify([...stamps])); refreshStamps(); toast(stamps.size === SPOTS.length ? '경복궁 한 바퀴 완주!' : `${s.name} 도장 쾅!`); }
+function refreshStamps(){
+  $('stampCount').textContent = stamps.size;
+  const line = $('stampline'); line.textContent = ''; for (const s of SPOTS){ const i = document.createElement('i'); if (stamps.has(s.id)) i.className = 'on'; i.title = s.name; line.appendChild(i); }
+  const box = $('stamps'); box.textContent = '';
+  for (const s of SPOTS){ const d = document.createElement('div'); d.className = 'seal' + (stamps.has(s.id) ? ' on' : ''); const sp = document.createElement('span'); sp.textContent = stamps.has(s.id) ? s.name : '?'; const l = document.createElement('div'); l.textContent = s.name; d.append(sp, l); box.appendChild(d); }
+  $('doneMsg').hidden = stamps.size < SPOTS.length;
+  for (const s of SPOTS){ const got = stamps.has(s.id); s.ring.material.color.setHex(got ? 0xc2412d : 0xe8c87a); s.sprite.visible = !got; }
+  const chips = $('chips'); chips.textContent = '';
+  for (const s of SPOTS){ const b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (stamps.has(s.id) ? ' got' : ''); b.textContent = s.name; b.addEventListener('click', () => goSpot(s)); chips.appendChild(b); }
+}
+function goSpot(s){ const f = s.face || 0; teleport(s.x + Math.sin(f)*3, s.z + Math.cos(f)*3, f); }
+function teleport(x, z, yw){ player.x = x; player.z = z; yaw = yw; player.heading = yw + Math.PI; if (window.innerWidth <= 980) vp.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'center'}); }
+$('bookBtn').addEventListener('click', () => { $('book').hidden = false; });
+function closeBook(){ $('book').hidden = true; }
+$('bookClose').addEventListener('click', closeBook);
+$('book').addEventListener('click', e => { if (e.target.id === 'book') closeBook(); });
+
+/* ================= minimap ================= */
+const mini = $('mini'), mg = mini.getContext('2d');
+const MAPB = {x0:-205, x1:205, z0:-335, z1:310};
+const toMap = (x, z) => [ (x - MAPB.x0)/(MAPB.x1 - MAPB.x0)*mini.width, (z - MAPB.z0)/(MAPB.z1 - MAPB.z0)*mini.height ];
+const mapBase = document.createElement('canvas'); mapBase.width = mini.width; mapBase.height = mini.height;
+(function(){
+  const g = mapBase.getContext('2d'); g.fillStyle = '#2a4538'; g.fillRect(0,0,mapBase.width,mapBase.height);
+  const [a,b] = toMap(OW.x0, OW.z0), [c,d] = toMap(OW.x1, OW.z1); g.fillStyle = '#c9b98f'; g.fillRect(a,b,c-a,d-b);
+  const order = [...mapShapes.filter(s=>s.ground), ...mapShapes.filter(s=>!s.ground)];
+  for (const s of order){ g.fillStyle = s.color;
+    if (s.type === 'rect'){ const [x0,z0] = toMap(Math.min(s.x0,s.x1), Math.min(s.z0,s.z1)), [x1,z1] = toMap(Math.max(s.x0,s.x1), Math.max(s.z0,s.z1)); g.fillRect(x0, z0, Math.max(2,x1-x0), Math.max(2,z1-z0)); }
+    else { const [x,z] = toMap(s.x, s.z); g.beginPath(); g.arc(x, z, s.r/(MAPB.x1-MAPB.x0)*mini.width, 0, Math.PI*2); g.fill(); } }
+  g.fillStyle = 'rgba(80,110,70,.9)'; for (const t of trees){ const [x,z] = toMap(t.x, t.z); g.beginPath(); g.arc(x, z, 2.2, 0, Math.PI*2); g.fill(); }
+  g.fillStyle = '#e8eadf'; g.font = '700 16px "Gowun Dodum",sans-serif'; g.textAlign = 'right'; g.fillText('N ↑', mapBase.width - 12, 24);
+})();
+mini.addEventListener('click', e => {
+  const r = mini.getBoundingClientRect(), mx = (e.clientX - r.left)/r.width*mini.width, my = (e.clientY - r.top)/r.height*mini.height;
+  const x = MAPB.x0 + mx/mini.width*(MAPB.x1-MAPB.x0), z = MAPB.z0 + my/mini.height*(MAPB.z1-MAPB.z0);
+  let best = null, bd = 30; for (const s of SPOTS){ const d = Math.hypot(s.x-x, s.z-z); if (d < bd){ bd = d; best = s; } }
+  if (best) goSpot(best); else if (!blocked(x, z, 0.6)) teleport(x, z, yaw);
+});
+function drawMini(){
+  mg.drawImage(mapBase, 0, 0);
+  mg.font = '700 15px "Gowun Dodum",sans-serif'; mg.textAlign = 'center';
+  for (const s of SPOTS){ const [x,z] = toMap(s.x, s.z); mg.fillStyle = stamps.has(s.id) ? '#c2412d' : '#f1d277'; mg.strokeStyle = '#1d2730'; mg.lineWidth = 2; mg.beginPath(); mg.arc(x, z, 6, 0, Math.PI*2); mg.fill(); mg.stroke();
+    mg.lineWidth = 4; mg.strokeStyle = 'rgba(15,28,23,.85)'; mg.strokeText(s.name, x, z - 10); mg.fillStyle = '#f3efe2'; mg.fillText(s.name, x, z - 10); }
+  for (const p of peers.values()){ const [x,z] = toMap(p.x, p.z); mg.fillStyle = '#7fb6d9'; mg.strokeStyle = '#fff'; mg.lineWidth = 2; mg.beginPath(); mg.arc(x, z, 7, 0, Math.PI*2); mg.fill(); mg.stroke(); }
+  const [px, pz] = toMap(player.x, player.z);
+  mg.save(); mg.translate(px, pz); mg.rotate(-yaw); mg.fillStyle = 'rgba(232,200,122,.25)'; mg.beginPath(); mg.moveTo(0,0); mg.arc(0,0,38,-Math.PI/2-0.5,-Math.PI/2+0.5); mg.fill();
+  mg.fillStyle = '#e8c87a'; mg.strokeStyle = '#1d2730'; mg.lineWidth = 2; mg.beginPath(); mg.moveTo(0,-11); mg.lineTo(8,8); mg.lineTo(0,4); mg.lineTo(-8,8); mg.closePath(); mg.fill(); mg.stroke(); mg.restore();
+}
+
+/* ================= multiplayer (room presence) ================= */
+const peers = new Map(); // peer -> {x,z,heading,avatar,label,nick,hue,emoteAt,tx,tz}
+let room = null, myNick = store.get('gbg3d.nick') || '';
+const nickEl = $('nick'); nickEl.value = myNick;
+let wavedAt = 0, myBubble = null;
+function bubble(text){ const s = labelSprite(text, 'rgba(255,255,255,.95)', '#1d2730', '#e8c87a', 1.1); return s; }
+function wave(){ wavedAt = Date.now(); if (myBubble){ scene.remove(myBubble); } myBubble = bubble('안녕하세요!'); scene.add(myBubble); pushPresence(true); }
+nickEl.addEventListener('change', () => { myNick = nickEl.value.trim().slice(0,12); store.set('gbg3d.nick', myNick); pushPresence(true); });
+let lastPush = 0, lastSent = '';
+function pushPresence(force){
+  if (!room) return; const now = performance.now(); if (!force && now - lastPush < 160) return;
+  const st = {x:+player.x.toFixed(2), z:+player.z.toFixed(2), y:+Math.max(0, player.y - groundH(player.x, player.z)).toFixed(2), h:+player.heading.toFixed(2), nick:myNick || '방문객', hue:myHue, wave:wavedAt, fp:firstPerson};
+  const key = JSON.stringify(st); if (!force && key === lastSent) return; lastSent = key; lastPush = now;
+  room.presence({walk:st}).catch(() => {});
+}
+function syncPeers(list){
+  const seen = new Set();
+  for (const p of list){
+    if (p.sameTab || p.kind !== 'viewer') continue;
+    const w = p.presence && p.presence.walk; if (!w || typeof w.x !== 'number' || typeof w.z !== 'number') continue;
+    seen.add(p.peer);
+    let q = peers.get(p.peer);
+    const nick = String(w.nick || '방문객').slice(0, 12), hue = HUES[1 + ([...String(p.peer)].reduce((h, ch) => (h*31 + ch.charCodeAt(0)) >>> 0, 7) % (HUES.length - 1))];
+    if (!q){ const av = makeRoyal(hue); q = {avatar:av, x:w.x, z:w.z, heading:w.h||0, nick:'', hue}; peers.set(p.peer, q); }
+    if (q.nick !== nick){ if (q.label) scene.remove(q.label); q.label = labelSprite('● ' + nick, 'rgba(15,28,23,.85)', '#eef2e8', '#7fb6d9'); scene.add(q.label); q.nick = nick; }
+    q.jy = Math.max(0, Math.min(4, +w.y || 0)); q.tx = Math.max(BOUND.x0, Math.min(BOUND.x1, w.x)); q.tz = Math.max(BOUND.z0, Math.min(BOUND.z1, w.z)); q.th = +w.h || 0;
+    if (w.wave && w.wave !== q.wave){ q.wave = w.wave; if (Date.now() - w.wave < 8000){ if (q.bub) scene.remove(q.bub); q.bub = bubble('안녕하세요!'); scene.add(q.bub); q.bubT = 3; } }
+  }
+  for (const [id, q] of peers) if (!seen.has(id)){ scene.remove(q.avatar.g); if (q.label) scene.remove(q.label); if (q.bub) scene.remove(q.bub); peers.delete(id); }
+  const n = peers.size;
+  $('liveCount').textContent = n ? `${n + 1}명 접속 중` : '혼자 산책 중'; $('liveDot').classList.toggle('on', true);
+  const box = $('people'); box.textContent = '';
+  const row = (name, color, mine) => { const d = document.createElement('div'); const i = document.createElement('i'); i.style.background = color; const s = document.createElement('span'); s.textContent = name + (mine ? ' (나)' : ''); d.append(i, s); box.appendChild(d); };
+  row(myNick || '방문객', '#e8c87a', true);
+  for (const q of peers.values()) row(q.nick, '#7fb6d9', false);
+  if (!n){ const d = document.createElement('div'); d.style.color = 'var(--muted)'; d.textContent = '같은 주소로 들어온 사람이 함께 보여요.'; box.appendChild(d); }
+}
+(function connectSupabase(){
+  const cfg = window.GBG_CONFIG || {};
+  if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase){ $('liveCount').textContent = '혼자 산책 중'; return; }
+  let base = store.get('gbg3d.id'); if (!base){ base = Math.random().toString(36).slice(2, 10); store.set('gbg3d.id', base); }
+  const myId = base + '-' + Math.random().toString(36).slice(2, 6);
+  try {
+    const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {realtime:{params:{eventsPerSecond:10}}});
+    const ch = sb.channel(cfg.roomName || 'gyeongbokgung-walk', {config:{presence:{key:myId}}});
+    const toList = () => Object.entries(ch.presenceState()).map(([k, arr]) => ({peer:k, sameTab:k === myId, kind:'viewer', presence:(arr && arr[arr.length-1]) || {}}));
+    ch.on('presence', {event:'sync'}, () => syncPeers(toList()));
+    ch.subscribe(st => {
+      if (st === 'SUBSCRIBED'){ room = {presence: o => Promise.resolve(ch.track(o))}; $('liveDot').classList.add('on'); pushPresence(true); syncPeers(toList()); }
+      else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED'){ $('liveDot').classList.remove('on'); }
+    });
+  } catch(e){ $('liveCount').textContent = '혼자 산책 중'; }
+})();
+
+/* ================= main loop ================= */
+function resize(){ const w = vp.clientWidth, h = vp.clientHeight; renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(vp); resize();
+const fwd = new THREE.Vector3(), tmpV = new THREE.Vector3();
+let last = performance.now(), regionName = '', frame = 0;
+
+function update(dt){
+  // movement input: up/down walk, left/right turn (camera follows)
+  let f = -mv.y, turn = -mv.x;
+  if (keys['w'] || keys['arrowup']) f += 1; if (keys['s'] || keys['arrowdown']) f -= 1;
+  if (keys['a'] || keys['arrowleft']) turn += 1; if (keys['d'] || keys['arrowright']) turn -= 1;
+  if (dlg.open || !$('book').hidden){ f = 0; turn = 0; }
+  f = Math.max(-1, Math.min(1, f)); turn = Math.max(-1, Math.min(1, turn));
+  yaw += turn * 2.3 * dt;
+  const run = running || keys['shift'];
+  const speed = (run ? 10 : 5.2) * Math.abs(f) * (f < 0 ? 0.6 : 1);
+  let moving = false;
+  const curH = groundH(player.x, player.z), footY = Math.max(curH, player.y);
+  if (Math.abs(f) > 0.08){
+    const dx = -Math.sin(yaw)*Math.sign(f), dz = -Math.cos(yaw)*Math.sign(f);
+    const nx = player.x + dx*speed*dt, nz = player.z + dz*speed*dt;
+    const okX = !blocked(nx, player.z, 0.45) && groundH(nx, player.z) - footY < 1.05;
+    const okZ = !blocked(player.x, nz, 0.45) && groundH(player.x, nz) - footY < 1.05;
+    if (okX) player.x = nx; if (okZ) player.z = nz;
+    moving = okX || okZ;
+  }
+  { const target = yaw + Math.PI; let dh = target - player.heading; while (dh > Math.PI) dh -= Math.PI*2; while (dh < -Math.PI) dh += Math.PI*2; player.heading += dh * Math.min(1, dt*14); }
+  const gh = groundH(player.x, player.z);
+  if (player.air){
+    player.vy -= 24*dt; player.y += player.vy*dt;
+    if (player.y <= gh){ player.y = gh; player.vy = 0; player.air = false; }
+  } else if (player.y > gh + 0.35){ player.air = true; player.vy = 0; }
+  else player.y += (gh - player.y) * Math.min(1, dt*14);
+  const waving = Date.now() - wavedAt < 1500;
+  me.g.position.set(player.x, player.y, player.z); me.g.rotation.y = player.heading;
+  me.shadow.position.y = (gh - player.y)/1.05 + 0.04;
+  animateAvatar(me, moving, dt, speed, player.air, waving);
+  if (myBubble){ myBubble.position.set(player.x, player.y + 2.9, player.z); if (Date.now() - wavedAt > 3000){ scene.remove(myBubble); myBubble = null; } }
+  if (moving || frame % 30 === 0) pushPresence(false);
+
+  // peers
+  for (const q of peers.values()){
+    const k = Math.min(1, dt*8), px = q.x, pz = q.z;
+    q.x += (q.tx - q.x) * k; q.z += (q.tz - q.z) * k;
+    let dh = q.th - q.heading; while (dh > Math.PI) dh -= Math.PI*2; while (dh < -Math.PI) dh += Math.PI*2; q.heading += dh * k;
+    const gy = groundH(q.x, q.z), mvg = Math.hypot(q.x-px, q.z-pz) > 0.01;
+    const qy = gy + (q.jy || 0); q.avatar.g.position.set(q.x, qy, q.z); q.avatar.g.rotation.y = q.heading; animateAvatar(q.avatar, mvg, dt, 5, (q.jy||0) > 0.2, Date.now() - (q.wave||0) < 1500);
+    if (q.label) q.label.position.set(q.x, gy + 2.5, q.z);
+    if (q.bub){ q.bub.position.set(q.x, gy + 3.5, q.z); q.bubT -= dt; if (q.bubT <= 0){ scene.remove(q.bub); q.bub = null; } }
+  }
+
+  // camera
+  const eye = 1.65;
+  if (firstPerson){
+    camera.position.set(player.x, player.y + eye, player.z);
+    fwd.set(-Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw)*Math.cos(pitch));
+    camera.lookAt(tmpV.copy(camera.position).add(fwd));
+  } else {
+    const tgtY = player.y + 1.7;
+    const cp = Math.cos(-pitch + 0.25), sp = Math.sin(-pitch + 0.25);
+    let dist = camDist;
+    for (let d = 1.5; d <= camDist; d += 0.5){ const cx = player.x + Math.sin(yaw)*d*cp, cz = player.z + Math.cos(yaw)*d*cp; if (blocked(cx, cz, 0.15)) { dist = Math.max(1.5, d - 0.6); break; } }
+    camera.position.set(player.x + Math.sin(yaw)*dist*cp, tgtY + dist*sp + 0.6, player.z + Math.cos(yaw)*dist*cp);
+    camera.lookAt(player.x - Math.sin(yaw)*2, tgtY + 0.4 + Math.sin(pitch)*2, player.z - Math.cos(yaw)*2);
+  }
+
+  // spots
+  const t = performance.now()*0.003;
+  for (const s of SPOTS){ s.ring.rotation.z = reduce ? 0 : t*0.3; s.sprite.position.y = s.y + 4.2 + (reduce ? 0 : Math.sin(t + s.x)*0.15); }
+  const near = !dlg.open ? nearestSpot() : null;
+  const pr = $('prompt');
+  if (near){ pr.hidden = false; pr.innerHTML = ''; pr.append(document.createTextNode(near.name + (stamps.has(near.id) ? ' · 다시 듣기' : ' 살펴보기'))); if (!isTouch){ const k = document.createElement('kbd'); k.textContent = 'E'; pr.appendChild(k); } }
+  else pr.hidden = true;
+  $('actBtn').classList.toggle('dim', !near && !dlg.open);
+  $('actBtn').innerHTML = dlg.open ? '다음' : '살펴<br>보기';
+  vp.classList.toggle('talking', dlg.open);
+
+  // dialog typing
+  if (dlg.open){ const p = dlg.pages[dlg.i]; if (dlg.shown < p.length) dlg.shown = Math.min(p.length, dlg.shown + dt*45); $('dlgText').textContent = p.slice(0, Math.floor(dlg.shown)); $('dlgNext').textContent = dlg.i < dlg.pages.length - 1 ? '다음 ▶' : '닫기 ✕'; $('dlgNext').hidden = dlg.shown < p.length; }
+
+  const rn = regionAt(player.x, player.z); if (rn !== regionName){ regionName = rn; $('whereName').textContent = rn; $('hereName').textContent = rn; }
+  if (toastT > 0){ toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
+}
+
+function loop(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now; frame++;
+  update(dt);
+  renderer.render(scene, camera);
+  if (frame % 3 === 0) drawMini();
+  requestAnimationFrame(loop);
+}
+refreshStamps();
+$('loading').hidden = true;
+requestAnimationFrame(loop);
+setTimeout(() => { if (!stamps.size && !dlg.open) openDialog('수문장', ['어서 오시오! 경복궁 한 바퀴 산책에 온 걸 환영하오.', isTouch ? '화면 왼쪽을 위아래로 끌면 걷고 좌우로 끌면 방향이 바뀌오. 오른쪽을 끌면 둘러볼 수 있고, 점프 버튼도 있소. 금색 원에서 빨간 버튼을 누르면 해설과 도장이오.' : '↑↓ 방향키로 걷고 ←→로 방향을 바꾸시오. 스페이스바는 점프, Shift는 달리기, V는 1인칭 전환, F는 인사하기요.', '금색 원 앞에서 E를 누르면 해설이 나오고 도장이 찍히오. 열두 곳을 모두 모아 보시오!']); }, 500);
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
